@@ -1,5 +1,6 @@
 package cat.jiu.dialog;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.util.List;
 
@@ -15,6 +16,8 @@ import cat.jiu.dialog.type.ShowPosType;
 import io.netty.buffer.ByteBuf;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.GuiIngame;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
@@ -34,8 +37,15 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+/**
+ * 1.添加延迟
+ * 2.实现渲染
+ *
+ */
 @Mod.EventBusSubscriber
 public class Dialog {
+	public static final ITime NO_DELAY = new Time();
+	
 	public static void dialog(BlockPos pos, String talkEntityName, String text, ITime talkTime, ShowPosType side) {
 		dialog(pos, talkEntityName, text, talkTime, side, null, null);
 	}
@@ -99,7 +109,7 @@ public class Dialog {
 					current.playSound = true;
 				}
 				if(event.side.isClient()) {
-					current.render(Minecraft.getMinecraft());
+					current.render(Minecraft.getMinecraft().ingameGUI, Minecraft.getMinecraft().fontRenderer);
 				}
 			}
 		}
@@ -109,7 +119,8 @@ public class Dialog {
 		final BlockPos pos;
 		final String talkName;
 		final String text;
-		final ITime talkTime; 
+		final ITime talkTime;
+		ITime delay; 
 		final ShowPosType side;
 		final ResourceLocation img;
 		final Sound sound;
@@ -131,8 +142,8 @@ public class Dialog {
 		boolean sendToClient = false;
 		
 		@SideOnly(Side.CLIENT)
-		public void render(Minecraft mc) {
-			
+		public void render(GuiIngame gui, FontRenderer fr) {
+			gui.drawCenteredString(fr, text, 11, 11, Color.RED.getRGB());
 		}
 
 		public Type copy() {
