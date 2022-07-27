@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry path="src/main/java" kind="src"/>
+	<classpathentry path="bin" kind="output"/>
+	<classpathentry path="src/main/resources" kind="src"/>
+	<classpathentry path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8/" kind="con"/>
+	<classpathentry path="libs/JiuCore-1.12.2-1.1.1-a0-20220728034743-dev.jar" kind="lib" sourcepath="libs/JiuCore-1.12.2-1.1.1-a0-20220728034743-sources.jar"/>
+</classpath>
