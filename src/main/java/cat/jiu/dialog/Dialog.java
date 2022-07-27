@@ -85,8 +85,8 @@ public class Dialog {
 				}
 				
 				if(!current.sendToClient && event.side.isServer()) {
-					DialogMain.net.sendMessageToPlayer(new MsgDialogue(current), (EntityPlayerMP) event.player);
 					current.sendToClient = true;
+					DialogMain.net.sendMessageToPlayer(new MsgDialogue(current), (EntityPlayerMP) event.player);
 				}
 				
 				current.talkTime.update();
