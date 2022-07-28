@@ -8,16 +8,18 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.Lists;
 
-import cat.jiu.caption.jiucore.time.ITime;
+import cat.jiu.caption.jiucore.time.ICaptionTime;
 import cat.jiu.caption.jiucore.time.Time;
-import cat.jiu.caption.type.ShowPosType;
+import cat.jiu.caption.type.DisplaySideType;
 import io.netty.buffer.ByteBuf;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiIngame;
 import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
@@ -25,6 +27,7 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.BlockPos;
 
+import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Optional;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -41,154 +44,185 @@ import net.minecraftforge.fml.relauncher.SideOnly;
  */
 @Mod.EventBusSubscriber
 public class Caption {
-	public static final ITime NO_DELAY = new Time();
+	public static final ICaptionTime NO_DELAY = new Time();
 	
-	public static void add(BlockPos pos, String talkEntityName, String text, ITime talkTime, ShowPosType side, ITime delay) {
-		add(pos, talkEntityName, text, talkTime, side, delay, null, null);
+	public static void add(EntityPlayer player, BlockPos pos, String displayName, String displayText, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
+		if(!player.world.isRemote) {
+			CaptionMain.net.sendMessageToPlayer(new MsgCaption(new Element(pos, displayName, displayText, displayTime, displaySide, displayDelay, displayImg, sound)), (EntityPlayerMP) player);
+		}else {
+			currentCaptions.add(new Element(pos, displayName, displayText, displayTime, displaySide, displayDelay, displayImg, sound));
+		}
 	}
-	public static void add(EntityLiving entity, String talkEntityName, String text, ITime talkTime, ShowPosType side, ITime delay) {
-		add(entity.getPosition(), talkEntityName, text, talkTime, side, delay);
-	}
-	public static void add(BlockPos pos, String talkEntityName, String text, ITime talkTime, ShowPosType side, ITime delay, @Nullable ResourceLocation img, @Nullable Sound sound) {
-		currentCaptions.add(new Type(pos, talkEntityName, text, talkTime, side, delay, img, sound));
-	}
-	public static void add(EntityLiving entity, String talkEntityName, String text, ITime talkTime, ShowPosType side, ITime delay, @Nullable ResourceLocation img, @Nullable Sound sound) {
-		add(entity.getPosition(), talkEntityName, text, talkTime, side, delay, img, sound);
+	
+	public static void add(EntityPlayer player, EntityLiving entity, String displayName, String displayText, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
+		add(player, entity.getPosition(), displayName, displayText, displayTime, displaySide, displayDelay, displayImg, sound);
 	}
 
 	@Optional.Method(modid = "jiucore")
-	public static void add(BlockPos pos, String talkEntityName, String text, cat.jiu.core.api.ITime talkTime, ShowPosType side, ITime delay) {
-		add(pos, talkEntityName, text, ITime.fromCoreTime(talkTime), side, delay);
+	public static void add(EntityPlayer player, BlockPos pos, String displayName, String displayText, cat.jiu.core.api.ITime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
+		add(player, pos, displayName, displayText, ICaptionTime.fromCoreTime(displayTime), displaySide, displayDelay, displayImg, sound);
 	}
 	@Optional.Method(modid = "jiucore")
-	public static void add(EntityLiving entity, String talkEntityName, String text, cat.jiu.core.api.ITime talkTime, ShowPosType side, ITime delay) {
-		add(entity, talkEntityName, text, ITime.fromCoreTime(talkTime), side, delay);
-	}
-	@Optional.Method(modid = "jiucore")
-	public static void add(BlockPos pos, String talkEntityName, String text, cat.jiu.core.api.ITime talkTime, ShowPosType side, ITime delay, @Nullable ResourceLocation img, @Nullable Sound sound) {
-		add(pos, talkEntityName, text, ITime.fromCoreTime(talkTime), side, delay, img, sound);
-	}
-	@Optional.Method(modid = "jiucore")
-	public static void add(EntityLiving entity, String talkEntityName, String text, cat.jiu.core.api.ITime talkTime, ShowPosType side, ITime delay, @Nullable ResourceLocation img, @Nullable Sound sound) {
-		add(entity, talkEntityName, text, ITime.fromCoreTime(talkTime), side, delay, img, sound);
+	public static void add(EntityPlayer player, EntityLiving entity, String displayName, String displayText, cat.jiu.core.api.ITime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
+		add(player, entity, displayName, displayText, ICaptionTime.fromCoreTime(displayTime), displaySide, displayDelay, displayImg, sound);
 	}
 	
-	private static List<Caption.Type> currentCaptions = Lists.newArrayList();
-	private static Caption.Type current = null;
-	public static Caption.Type getCurrentCaption() {return current.copy();}
+	private static List<Caption.Element> currentCaptions = Lists.newArrayList();
+	private static Caption.Element current = null;
+	public static Caption.Element getCurrentCaption() {return current;}
 	public static boolean hasCurrentCaption() {return current != null;}
+	public static Caption.Element getNextCaption() {
+		if(hasNextCaption()) {
+			return currentCaptions.get(0);
+		}
+		return null;
+	}
+	public static boolean hasNextCaption() {return !currentCaptions.isEmpty();}
 	
 	@SubscribeEvent
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-		if(event.phase == Phase.END) {
+		if(event.phase == Phase.END && !event.player.world.isRemote) {
 			if(!currentCaptions.isEmpty() && !hasCurrentCaption()) {
 				current = currentCaptions.get(0).copy();
 				currentCaptions.remove(0);
 			}
 			if(hasCurrentCaption()) {
-				if(current.talkTime.isDone()) {
+				if(current.displayTime.isDone()) {
 					current = null;
 					return;
 				}
 				
-				if(!current.sendToClient && event.side.isServer()) {
-					current.sendToClient = true;
-					CaptionMain.net.sendMessageToPlayer(new MsgDialogue(current), (EntityPlayerMP) event.player);
-				}
-				if(!current.delay.isDone()) {
-					current.delay.update();
-				}else {
-					current.talkTime.update();
+				if(current.delay.isDone()) {
 					if(!current.isPlaySound() && current.sound != null) {
 						if(current.sound.isLikeRecord()) {
 							event.player.world.playSound((double)current.pos.getX(), (double)current.pos.getY(), (double)current.pos.getZ(), current.sound.sound, SoundCategory.PLAYERS, 1F, 1F, false);
 						}else {
-							event.player.world.playSound(event.player, current.pos, current.sound.sound, SoundCategory.PLAYERS, 1F, 1F);
+							event.player.world.playSound(Minecraft.getMinecraft().player, current.pos, current.sound.sound, SoundCategory.PLAYERS, 1F, 1F);
 						}
 						current.playSound = true;
-					}
-					if(event.side.isClient()) {
-						current.render(Minecraft.getMinecraft().ingameGUI, Minecraft.getMinecraft().fontRenderer);
 					}
 				}
 			}
 		}
 	}
 	
-	public static class Type {
+	static void clearCaptions() {
+		currentCaptions.clear();
+		current = null;
+	}
+	
+	@SideOnly(Side.CLIENT)
+	@SubscribeEvent
+	public static void onRenderTick(TickEvent.RenderTickEvent event) {
+		if(event.phase == Phase.END && hasCurrentCaption()) {
+			if(current.displayTime.isDone()) {
+				current = null;
+			}else {
+				if(current.delay.isDone() && Minecraft.getMinecraft().player.world.isRemote) {
+					current.draw(Minecraft.getMinecraft().ingameGUI, Minecraft.getMinecraft().fontRenderer, event.renderTickTime);
+				}
+			}
+		}
+	}
+	
+	static {
+		new Thread(()->{
+			while(true) {
+				try {Thread.sleep(50);}catch(InterruptedException e) { e.printStackTrace();}
+				if(hasCurrentCaption()) {
+					if(!current.delay.isDone()) {
+						current.delay.update();
+					}else {
+						current.displayTime.update();
+					}
+				}
+			}
+		}, "Draw Caption Thread").start();
+	}
+	
+	// Test
+	@SubscribeEvent
+	public static void onPlayerBreakBlock(BlockEvent.BreakEvent event) {
+		if(event.getState().getBlock() == Blocks.DIAMOND_BLOCK) {
+			Caption.add(event.getPlayer(), event.getPos(), "钻石块: " + event.getPos(), "你为什么要这样对我！", new Time(5, 0), DisplaySideType.UP, new Time(1, 0), null, null);
+		}
+	}
+	
+	public static class Element {
 		final BlockPos pos;
-		final String talkName;
-		final String text;
-		final ITime talkTime;
-		final ITime delay; 
-		final ShowPosType side;
-		final ResourceLocation img;
+		String displayName;
+		String displayText;
+		final ICaptionTime displayTime;
+		final ICaptionTime delay; 
+		final DisplaySideType side;
+		ResourceLocation displayImg;
 		final Sound sound;
 		
-		public Type(BlockPos pos, String talkName, String text, ITime talkTime, ShowPosType side, ITime delay) {
-			this(pos, talkName, text, talkTime, side, delay, null, null);
-		}
-		
-		public Type(BlockPos pos, String talkEntityName, String text, ITime talkTime, ShowPosType side, ITime delay, @Nullable ResourceLocation img, @Nullable Sound sound) {
+		public Element(BlockPos pos, String displayName, String displayText, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
 			this.pos = pos;
-			this.talkName = talkEntityName;
-			this.text = text;
-			this.talkTime = talkTime;
-			this.side = side;
-			this.delay = delay;
-			this.img = img;
+			this.displayName = displayName;
+			this.displayText = displayText;
+			this.displayTime = displayTime;
+			this.side = displaySide;
+			this.delay = displayDelay;
+			this.displayImg = displayImg;
 			this.sound = sound;
 		}
-		boolean playSound = false;
-		boolean sendToClient = false;
+		
+		private boolean playSound = false;
 		
 		@SideOnly(Side.CLIENT)
-		public void render(GuiIngame gui, FontRenderer fr) {
-			gui.drawCenteredString(fr, text, 11, 11, Color.RED.getRGB());
+		public void draw(GuiIngame gui, FontRenderer fr, float renderTickTime) {
+			gui.drawString(fr, this.displayName, 22, 0, Color.YELLOW.getRGB());
+			gui.drawString(fr, this.displayText, 22, 10, Color.GRAY.getRGB());
 		}
 
-		public Type copy() {
-			return new Type(pos, talkName, text, talkTime, side, delay, img, sound);
+		public Element copy() {
+			return new Element(pos, displayName, displayText, displayTime, side, delay, displayImg, sound);
 		}
 
 		public BlockPos getPos() {return pos;}
-		public String getName() {return talkName;}
-		public String getText() {return text;}
-		public ITime getTalkTime() {return talkTime;}
-		public ITime getDelay() {return delay;}
-		public ShowPosType getSide() {return side;}
-		public ResourceLocation getImg() {return img;}
+		public String getDisplayName() {return displayName;}
+		public String getDisplayText() {return displayText;}
+		public ICaptionTime getTalkTime() {return displayTime;}
+		public ICaptionTime getDelay() {return delay;}
+		public DisplaySideType getDisplaySide() {return side;}
+		public ResourceLocation getDisplayImg() {return displayImg;}
 		public Sound getSound() {return sound;}
 		public boolean isPlaySound() {return playSound;}
+		
+		public void setDisplayName(String displayName) {this.displayName = displayName;}
+		public void setDisplayText(String displayText) {this.displayText = displayText;}
+		public void setDisplayImg(ResourceLocation displayImg) {this.displayImg = displayImg;}
 
 		public NBTTagCompound toNBT() {
 			NBTTagCompound nbt = new NBTTagCompound();
 			
 			nbt.setTag("pos", toNBT(pos));
-			nbt.setString("name", this.talkName);
-			nbt.setString("text", this.text);
-			nbt.setTag("time", this.talkTime.writeToNBT(new NBTTagCompound(), false));
+			nbt.setString("name", this.displayName);
+			nbt.setString("text", this.displayText);
+			nbt.setTag("time", this.displayTime.writeToNBT(new NBTTagCompound(), false));
 			nbt.setTag("delay", this.delay.writeToNBT(new NBTTagCompound(), false));
 			nbt.setInteger("side", this.side.getID());
-			if(this.img!=null)nbt.setString("img", this.img.toString());
+			if(this.displayImg!=null)nbt.setString("img", this.displayImg.toString());
 			if(this.sound!=null)nbt.setTag("sound", this.sound.toNBT());
 			
 			return nbt;
 		}
 		
-		public static Type fromNBT(NBTTagCompound nbt) {
+		public static Element fromNBT(NBTTagCompound nbt) {
 			BlockPos pos = toPos(nbt.getCompoundTag("pos"));
 			String talkEntityName = nbt.getString("name");
 			String text = nbt.getString("text");
-			ITime talkTime = ITime.from(nbt.getCompoundTag("time"));
-			ITime delay = ITime.from(nbt.getCompoundTag("delay"));
+			ICaptionTime talkTime = ICaptionTime.from(nbt.getCompoundTag("time"));
+			ICaptionTime delay = ICaptionTime.from(nbt.getCompoundTag("delay"));
 			
-			ShowPosType side = ShowPosType.getType(nbt.getInteger("side"));
+			DisplaySideType side = DisplaySideType.getType(nbt.getInteger("side"));
 			
 			ResourceLocation img = nbt.hasKey("img") ? new ResourceLocation(nbt.getString("img")) : null;
 			Sound sound = nbt.hasKey("sound") ? Sound.fromNBT(nbt.getCompoundTag("sound")) : null;
 			
-			return new Type(pos, talkEntityName, text, talkTime, side, delay, img, sound);
+			return new Element(pos, talkEntityName, text, talkTime, side, delay, img, sound);
 		}
 		
 		private static BlockPos toPos(NBTTagCompound nbt) {
@@ -203,17 +237,17 @@ public class Caption {
 		}
 	}
 	
-	public static class MsgDialogue implements IMessage {
-		Caption.Type type;
-		public MsgDialogue() {}
-		public MsgDialogue(Caption.Type type) {
+	public static class MsgCaption implements IMessage {
+		Caption.Element type;
+		public MsgCaption() {}
+		public MsgCaption(Caption.Element type) {
 			this.type = type;
 		}
 		
 		@Override
 		public void fromBytes(ByteBuf buf) {
 			try {
-				this.type = Caption.Type.fromNBT(new PacketBuffer(buf).readCompoundTag());
+				this.type = Caption.Element.fromNBT(new PacketBuffer(buf).readCompoundTag());
 			}catch(IOException e) {
 				e.printStackTrace();
 			}
@@ -226,7 +260,7 @@ public class Caption {
 		
 		public IMessage handler(MessageContext ctx) {
 			if(ctx.side.isClient()) {
-				current = type;
+				currentCaptions.add(type);
 			}
 			return null;
 		}

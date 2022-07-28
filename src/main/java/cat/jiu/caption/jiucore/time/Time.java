@@ -6,7 +6,7 @@ import com.google.gson.JsonPrimitive;
 
 import cat.jiu.caption.jiucore.CoreUtils;
 
-public class Time implements ITime {
+public class Time implements ICaptionTime {
 	protected long day;
 	protected long hour;
 	protected long minute;

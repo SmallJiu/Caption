@@ -10,7 +10,7 @@ import cat.jiu.caption.jiucore.CoreUtils;
 import cat.jiu.core.util.JiuUtils;
 import net.minecraft.nbt.NBTTagCompound;
 
-public class BigTime implements ITime {
+public class BigTime implements ICaptionTime {
 	protected BigInteger day;
 	protected BigInteger hour;
 	protected BigInteger minute;
@@ -190,7 +190,7 @@ public class BigTime implements ITime {
 		BigDecimal b3 = ticks.subtract(allTicks).multiply(BigDecimal.valueOf(1)).divide(allTicks).add(BigDecimal.valueOf(1));
 		return b3.floatValue();
 		*/
-		return ITime.super.getSurplusPart();
+		return ICaptionTime.super.getSurplusPart();
 	}
 	
 	public int getPart(int denominator) {

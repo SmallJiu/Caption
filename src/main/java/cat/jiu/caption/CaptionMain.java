@@ -7,6 +7,8 @@ import cat.jiu.caption.proxy.ServerProxy;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLServerStartedEvent;
+import net.minecraftforge.fml.common.event.FMLServerStoppedEvent;
 
 @Mod(
 	modid = CaptionMain.MODID,
@@ -32,5 +34,10 @@ public class CaptionMain {
 	@Mod.EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
 		net = new CaptionNetworkHandler();
+	}
+	
+	@Mod.EventHandler
+	public void onServerStopped(FMLServerStoppedEvent event) {
+		Caption.clearCaptions();
 	}
 }

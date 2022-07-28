@@ -6,7 +6,7 @@ import cat.jiu.caption.jiucore.CoreUtils;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fml.common.Optional;
 
-public interface ITime {
+public interface ICaptionTime {
 	/**
 	 * the core method, 
 	 * use {@code ticks} to format time
@@ -24,28 +24,28 @@ public interface ITime {
 	long getTicks();
 	long getAllTicks();
 	
-	ITime setDay(long day);
-	ITime setHour(long hour);
-	ITime setMinute(long minute);
-	ITime setSecond(long second);
-	ITime setTick(long tick);
-	ITime setAllTicks(long allTicks);
+	ICaptionTime setDay(long day);
+	ICaptionTime setHour(long hour);
+	ICaptionTime setMinute(long minute);
+	ICaptionTime setSecond(long second);
+	ICaptionTime setTick(long tick);
+	ICaptionTime setAllTicks(long allTicks);
 
-	ITime copy();
+	ICaptionTime copy();
 	
-	default ITime setAllTicks(long s, long tick) {
+	default ICaptionTime setAllTicks(long s, long tick) {
 		return this.setAllTicks(Time.parseTick(s, tick));
 	}
-	default ITime setAllTicks(long m, long s, long tick) {
+	default ICaptionTime setAllTicks(long m, long s, long tick) {
 		return this.setAllTicks(Time.parseTick(m, s, tick));
 	}
-	default ITime setAllTicks(long h, long m, long s, long tick) {
+	default ICaptionTime setAllTicks(long h, long m, long s, long tick) {
 		return this.setAllTicks(Time.parseTick(h, m, s, tick));
 	}
-	default ITime setAllTicks(long day, long h, long m, long s, long tick) {
+	default ICaptionTime setAllTicks(long day, long h, long m, long s, long tick) {
 		return this.setAllTicks(Time.parseTick(day, h, m, s, tick));
 	}
-	default ITime setTicks(long ticks) {
+	default ICaptionTime setTicks(long ticks) {
 		this.format(ticks);
 		return this;
 	}
@@ -97,8 +97,8 @@ public interface ITime {
 	}
 	default boolean equalsTime(Object obj) {
 		if(obj == this) return true;
-		if(obj instanceof ITime) {
-			ITime other = (ITime) obj;
+		if(obj instanceof ICaptionTime) {
+			ICaptionTime other = (ICaptionTime) obj;
 			other.replace();
 			this.replace();
 			return this.hash() == other.hash() && this.getTicks() == other.getTicks();
@@ -166,8 +166,8 @@ public interface ITime {
 	}
 	
 	@Optional.Method(modid = "jiucore")
-	static ITime fromCoreTime(cat.jiu.core.api.ITime time) {
-		ITime dTime = null;
+	static ICaptionTime fromCoreTime(cat.jiu.core.api.ITime time) {
+		ICaptionTime dTime = null;
 		if(time instanceof cat.jiu.core.util.Time) {
 			dTime = new Time(time.getTicks());
 			dTime.setAllTicks(time.getAllTicks());
@@ -179,13 +179,13 @@ public interface ITime {
 		return dTime;
 	}
 	
-	public static ITime from(NBTTagCompound nbt) {
-		ITime time = nbt.getBoolean("isBig") ? new BigTime() : new Time();
+	public static ICaptionTime from(NBTTagCompound nbt) {
+		ICaptionTime time = nbt.getBoolean("isBig") ? new BigTime() : new Time();
 		time.readFromNBT(nbt);
 		return time;
 	}
-	public static ITime from(JsonObject obj) {
-		ITime time = obj.has("isBig") ? new BigTime() : new Time();
+	public static ICaptionTime from(JsonObject obj) {
+		ICaptionTime time = obj.has("isBig") ? new BigTime() : new Time();
 		time.toTime(obj);
 		return time;
 	}

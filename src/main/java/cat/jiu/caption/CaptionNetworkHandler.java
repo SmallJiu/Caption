@@ -10,14 +10,13 @@ import net.minecraftforge.fml.relauncher.Side;
 public class CaptionNetworkHandler {
 	private SimpleNetworkWrapper channel;
 	private static int ID = 0;
-
 	private static int nextID() {
 		return ID++;
 	}
 	
 	public CaptionNetworkHandler() {
 		this.channel = NetworkRegistry.INSTANCE.newSimpleChannel(CaptionMain.MODID);
-		this.channel.registerMessage(Caption.MsgDialogue::handler, Caption.MsgDialogue.class, nextID(), Side.CLIENT);
+		this.channel.registerMessage(Caption.MsgCaption::handler, Caption.MsgCaption.class, nextID(), Side.CLIENT);
 	}
 	
 	/** server to client */
