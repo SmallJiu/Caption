@@ -9,7 +9,7 @@ import javax.annotation.Nullable;
 import com.google.common.collect.Lists;
 
 import cat.jiu.caption.jiucore.time.ICaptionTime;
-import cat.jiu.caption.jiucore.time.Time;
+import cat.jiu.caption.jiucore.time.CaptionTime;
 import cat.jiu.caption.type.DisplaySideType;
 import io.netty.buffer.ByteBuf;
 
@@ -44,7 +44,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
  */
 @Mod.EventBusSubscriber
 public class Caption {
-	public static final ICaptionTime NO_DELAY = new Time();
+	public static final ICaptionTime NO_DELAY = new CaptionTime();
 	
 	public static void add(EntityPlayer player, BlockPos pos, String displayName, String displayText, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
 		if(!player.world.isRemote) {
@@ -144,7 +144,7 @@ public class Caption {
 	@SubscribeEvent
 	public static void onPlayerBreakBlock(BlockEvent.BreakEvent event) {
 		if(event.getState().getBlock() == Blocks.DIAMOND_BLOCK) {
-			Caption.add(event.getPlayer(), event.getPos(), "钻石块: " + event.getPos(), "你为什么要这样对我！", new Time(5, 0), DisplaySideType.UP, new Time(1, 0), null, null);
+			Caption.add(event.getPlayer(), event.getPos(), "钻石块: " + event.getPos(), "你为什么要这样对我！", new CaptionTime(5, 0), DisplaySideType.UP, new CaptionTime(1, 0), null, null);
 		}
 	}
 	

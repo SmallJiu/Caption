@@ -10,7 +10,7 @@ import cat.jiu.caption.jiucore.CoreUtils;
 import cat.jiu.core.util.JiuUtils;
 import net.minecraft.nbt.NBTTagCompound;
 
-public class BigTime implements ICaptionTime {
+public class CaptionBigTime implements ICaptionTime {
 	protected BigInteger day;
 	protected BigInteger hour;
 	protected BigInteger minute;
@@ -19,42 +19,42 @@ public class BigTime implements ICaptionTime {
 	protected BigInteger ticks;
 	protected BigInteger allTicks;
 	
-	public BigTime() {
+	public CaptionBigTime() {
 		this(0);
 	}
-	public BigTime(long ticks) {
+	public CaptionBigTime(long ticks) {
 		this(BigInteger.valueOf(ticks));
 	}
-	public BigTime(long sec, long tick) {
+	public CaptionBigTime(long sec, long tick) {
 		this(0, sec, tick);
 	}
-	public BigTime(long min, long sec, long tick) {
+	public CaptionBigTime(long min, long sec, long tick) {
 		this(0, 0, min, sec, tick);
 	}
-	public BigTime(long hour, long min, long sec, long tick) {
+	public CaptionBigTime(long hour, long min, long sec, long tick) {
 		this(0, hour, min, sec, tick);
 	}
-	public BigTime(long day, long hour, long min, long sec, long tick) {
+	public CaptionBigTime(long day, long hour, long min, long sec, long tick) {
 		this(parseTick(day, hour, min, sec, tick));
 	}
 	
-	public BigTime(BigInteger ticks) {
+	public CaptionBigTime(BigInteger ticks) {
 		this.format(ticks);
 		this.setAllTicks(ticks);
 	}
-	public BigTime(BigInteger s, BigInteger tick) {
+	public CaptionBigTime(BigInteger s, BigInteger tick) {
 		this(BigInteger.ZERO, s, tick);
 	}
 	
-	public BigTime(BigInteger m, BigInteger s, BigInteger tick) {
+	public CaptionBigTime(BigInteger m, BigInteger s, BigInteger tick) {
 		this(BigInteger.ZERO, m, s, tick);
 	}
 	
-	public BigTime(BigInteger h, BigInteger m, BigInteger s, BigInteger tick) {
+	public CaptionBigTime(BigInteger h, BigInteger m, BigInteger s, BigInteger tick) {
 		this(BigInteger.ZERO, h, m, s, tick);
 	}
 	
-	public BigTime(BigInteger day, BigInteger h, BigInteger m, BigInteger s, BigInteger tick) {
+	public CaptionBigTime(BigInteger day, BigInteger h, BigInteger m, BigInteger s, BigInteger tick) {
 		this(parseTick(day, h, m, s, tick));
 	}
 	
@@ -103,32 +103,32 @@ public class BigTime implements ICaptionTime {
 		this.ticks = ticks;
 	}
 	
-	public BigTime setDay(BigInteger day) {
+	public CaptionBigTime setDay(BigInteger day) {
 		this.day = day;
 		this.replace();
 		return this;
 	}
-	public BigTime setHour(BigInteger hour) {
+	public CaptionBigTime setHour(BigInteger hour) {
 		this.hour = hour;
 		this.replace();
 		return this;
 	}
-	public BigTime setMinute(BigInteger minute) {
+	public CaptionBigTime setMinute(BigInteger minute) {
 		this.minute = minute;
 		this.replace();
 		return this;
 	}
-	public BigTime setSecond(BigInteger second) {
+	public CaptionBigTime setSecond(BigInteger second) {
 		this.second = second;
 		this.replace();
 		return this;
 	}
-	public BigTime setTick(BigInteger tick) {
+	public CaptionBigTime setTick(BigInteger tick) {
 		this.tick = tick;
 		this.replace();
 		return this;
 	}
-	public BigTime setAllTicks(BigInteger allTicks) {
+	public CaptionBigTime setAllTicks(BigInteger allTicks) {
 		this.allTicks = allTicks;
 		return this;
 	}
@@ -146,7 +146,7 @@ public class BigTime implements ICaptionTime {
 // implement
 	public void update(int subtractTick) {this.format(this.ticks.subtract(BigInteger.valueOf(subtractTick)));}
 	public void format(long ticks) {this.format(BigInteger.valueOf(ticks));}
-	public boolean isDone() {return BigInteger.ZERO.equals(this.ticks);}
+	public boolean isDone() {return CoreUtils.lessOrEqual(this.ticks, BigInteger.ZERO);}
 	
 	public long getDay() {return this.day.longValue();}
 	public long getHour() {return this.hour.longValue();}
@@ -164,18 +164,18 @@ public class BigTime implements ICaptionTime {
 	public BigInteger getBigTicks() {return this.ticks;}
 	public BigInteger getBigAllTicks() {return this.allTicks;}
 	
-	public BigTime setDay(long day) {return this.setDay(BigInteger.valueOf(day));}
-	public BigTime setHour(long hour) {return this.setHour(BigInteger.valueOf(hour));}
-	public BigTime setMinute(long minute) {return this.setMinute(BigInteger.valueOf(minute));}
-	public BigTime setSecond(long second) {return this.setSecond(BigInteger.valueOf(second));}
-	public BigTime setTick(long tick) {return this.setTick(BigInteger.valueOf(tick));}
-	public BigTime setAllTicks(long allTicks) {return this.setAllTicks(BigInteger.valueOf(allTicks));}
-	public BigTime copy() {return new BigTime(ticks);}
+	public CaptionBigTime setDay(long day) {return this.setDay(BigInteger.valueOf(day));}
+	public CaptionBigTime setHour(long hour) {return this.setHour(BigInteger.valueOf(hour));}
+	public CaptionBigTime setMinute(long minute) {return this.setMinute(BigInteger.valueOf(minute));}
+	public CaptionBigTime setSecond(long second) {return this.setSecond(BigInteger.valueOf(second));}
+	public CaptionBigTime setTick(long tick) {return this.setTick(BigInteger.valueOf(tick));}
+	public CaptionBigTime setAllTicks(long allTicks) {return this.setAllTicks(BigInteger.valueOf(allTicks));}
+	public CaptionBigTime copy() {return new CaptionBigTime(ticks);}
 	public long hash() {return this.allTicks.hashCode();}
 	
 	public boolean equals(Object obj) {return this.equalsTime(obj);}
 	public String toString() {return this.toStringTime(false);}
-	public BigTime clone() {return this.copy();}
+	public CaptionBigTime clone() {return this.copy();}
 	public int hashCode() {return this.allTicks.hashCode();}
 	
 	public boolean isPart(int numerator, int denominator) {
@@ -254,16 +254,16 @@ public class BigTime implements ICaptionTime {
 	
 // static
 	
-	public static BigTime getTime(JsonElement e) {
+	public static CaptionBigTime getTime(JsonElement e) {
 		if(e.isJsonObject()) {
 			return getTime(e.getAsJsonObject());
 		}else if(e.isJsonPrimitive()) {
 			return getTime(e.getAsJsonPrimitive());
 		}
-		return new BigTime();
+		return new CaptionBigTime();
 	}
 	
-	public static BigTime getTime(JsonPrimitive json) {
+	public static CaptionBigTime getTime(JsonPrimitive json) {
 		BigInteger day = BigInteger.ZERO;
 		BigInteger hour = BigInteger.ZERO;
 		BigInteger min = BigInteger.ZERO;
@@ -275,10 +275,10 @@ public class BigTime implements ICaptionTime {
 			tick = new BigInteger(json.getAsString());
 		}
 		
-		return new BigTime(day, hour, min, sec, tick);
+		return new CaptionBigTime(day, hour, min, sec, tick);
 	}
 	
-	public static BigTime getTime(String time) {
+	public static CaptionBigTime getTime(String time) {
 		BigInteger day = BigInteger.ZERO;
 		BigInteger hour = BigInteger.ZERO;
 		BigInteger min = BigInteger.ZERO;
@@ -298,11 +298,11 @@ public class BigTime implements ICaptionTime {
 		}else {
 			tick = new BigInteger(time);
 		}
-		return new BigTime(day, hour, min, sec, tick);
+		return new CaptionBigTime(day, hour, min, sec, tick);
 	}
 	
-	public static BigTime getTime(JsonObject obj) {
-		return new BigTime(
+	public static CaptionBigTime getTime(JsonObject obj) {
+		return new CaptionBigTime(
 						time(obj, "d", "ds", "day",   "days"),
 						time(obj, "h", "hs", "hour",   "hours"),
 						time(obj, "m", "ms", "minute", "minutes"),

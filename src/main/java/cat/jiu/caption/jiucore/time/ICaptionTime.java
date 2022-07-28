@@ -34,16 +34,16 @@ public interface ICaptionTime {
 	ICaptionTime copy();
 	
 	default ICaptionTime setAllTicks(long s, long tick) {
-		return this.setAllTicks(Time.parseTick(s, tick));
+		return this.setAllTicks(CaptionTime.parseTick(s, tick));
 	}
 	default ICaptionTime setAllTicks(long m, long s, long tick) {
-		return this.setAllTicks(Time.parseTick(m, s, tick));
+		return this.setAllTicks(CaptionTime.parseTick(m, s, tick));
 	}
 	default ICaptionTime setAllTicks(long h, long m, long s, long tick) {
-		return this.setAllTicks(Time.parseTick(h, m, s, tick));
+		return this.setAllTicks(CaptionTime.parseTick(h, m, s, tick));
 	}
 	default ICaptionTime setAllTicks(long day, long h, long m, long s, long tick) {
-		return this.setAllTicks(Time.parseTick(day, h, m, s, tick));
+		return this.setAllTicks(CaptionTime.parseTick(day, h, m, s, tick));
 	}
 	default ICaptionTime setTicks(long ticks) {
 		this.format(ticks);
@@ -82,7 +82,7 @@ public interface ICaptionTime {
 		if(this.getHour() <= 0) this.setHour(0);
 		if(this.getDay() <= 0) this.setDay(0);
 		
-		this.format(Time.parseTick(this.getDay(), this.getHour(), this.getMinute(), this.getSecond(), this.getTick()));
+		this.format(CaptionTime.parseTick(this.getDay(), this.getHour(), this.getMinute(), this.getSecond(), this.getTick()));
 	}
 	
 	default String toStringTime(boolean reverse) {
@@ -127,7 +127,7 @@ public interface ICaptionTime {
 		}
 		nbt.setLong("ticks", this.getTicks());
 		nbt.setLong("allTicks", this.getAllTicks());
-		nbt.setBoolean("isBig", this instanceof BigTime);
+		nbt.setBoolean("isBig", this instanceof CaptionBigTime);
 		return nbt;
 	}
 	
@@ -146,7 +146,7 @@ public interface ICaptionTime {
 		}
 		obj.addProperty("ticks", this.getTicks());
 		obj.addProperty("allTicks", this.getAllTicks());
-		obj.addProperty("isBig", this instanceof BigTime);
+		obj.addProperty("isBig", this instanceof CaptionBigTime);
 		
 		return obj;
 	}
@@ -154,13 +154,13 @@ public interface ICaptionTime {
 	@Optional.Method(modid = "jiucore")
 	default cat.jiu.core.api.ITime toCoreTime() {
 		cat.jiu.core.api.ITime time = null;
-		if(this instanceof Time) {
+		if(this instanceof CaptionTime) {
 			time = new cat.jiu.core.util.Time(this.getTicks());
 			time.setAllTicks(this.getAllTicks());
 			
-		}else if(this instanceof BigTime) {
-			time = new cat.jiu.core.util.BigTime(((BigTime)this).getBigTicks());
-			time.setAllTicks(((BigTime)this).getAllTicks());
+		}else if(this instanceof CaptionBigTime) {
+			time = new cat.jiu.core.util.BigTime(((CaptionBigTime)this).getBigTicks());
+			time.setAllTicks(((CaptionBigTime)this).getAllTicks());
 		}
 		return time;
 	}
@@ -169,23 +169,23 @@ public interface ICaptionTime {
 	static ICaptionTime fromCoreTime(cat.jiu.core.api.ITime time) {
 		ICaptionTime dTime = null;
 		if(time instanceof cat.jiu.core.util.Time) {
-			dTime = new Time(time.getTicks());
+			dTime = new CaptionTime(time.getTicks());
 			dTime.setAllTicks(time.getAllTicks());
 			
 		}else if(time instanceof cat.jiu.core.util.BigTime) {
-			dTime = new BigTime(((cat.jiu.core.util.BigTime)time).getTicks());
+			dTime = new CaptionBigTime(((cat.jiu.core.util.BigTime)time).getTicks());
 			dTime.setAllTicks(((cat.jiu.core.util.BigTime)time).getAllTicks());
 		}
 		return dTime;
 	}
 	
 	public static ICaptionTime from(NBTTagCompound nbt) {
-		ICaptionTime time = nbt.getBoolean("isBig") ? new BigTime() : new Time();
+		ICaptionTime time = nbt.getBoolean("isBig") ? new CaptionBigTime() : new CaptionTime();
 		time.readFromNBT(nbt);
 		return time;
 	}
 	public static ICaptionTime from(JsonObject obj) {
-		ICaptionTime time = obj.has("isBig") ? new BigTime() : new Time();
+		ICaptionTime time = obj.has("isBig") ? new CaptionBigTime() : new CaptionTime();
 		time.toTime(obj);
 		return time;
 	}

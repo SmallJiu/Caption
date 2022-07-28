@@ -6,7 +6,7 @@ import com.google.gson.JsonPrimitive;
 
 import cat.jiu.caption.jiucore.CoreUtils;
 
-public class Time implements ICaptionTime {
+public class CaptionTime implements ICaptionTime {
 	protected long day;
 	protected long hour;
 	protected long minute;
@@ -15,104 +15,104 @@ public class Time implements ICaptionTime {
 	protected long ticks;
 	protected long allTicks;
 	
-	public Time() {
+	public CaptionTime() {
 		this(0);
 	}
-	public Time(long sec, long tick) {
+	public CaptionTime(long sec, long tick) {
 		this(0, sec, tick);
 	}
-	public Time(long min, long sec, long tick) {
+	public CaptionTime(long min, long sec, long tick) {
 		this(0, 0, min, sec, tick);
 	}
-	public Time(long hour, long min, long sec, long tick) {
+	public CaptionTime(long hour, long min, long sec, long tick) {
 		this(0, hour, min, sec, tick);
 	}
-	public Time(long day, long hour, long min, long sec, long tick) {
+	public CaptionTime(long day, long hour, long min, long sec, long tick) {
 		this(parseTick(day, hour, min, sec, tick));
 	}
-	public Time(long ticks) {
+	public CaptionTime(long ticks) {
 		this.setTicks(ticks);
 		this.setAllTicks(ticks);
 	}
 	
-	public Time subtractDay(long day) {
+	public CaptionTime subtractDay(long day) {
 		this.day -= day;
 		this.replace();
 		return this;
 	}
-	public Time subtractHour(long hour) {
+	public CaptionTime subtractHour(long hour) {
 		this.hour -= hour;
 		this.replace();
 		return this;
 	}
-	public Time subtractMinute(long minute) {
+	public CaptionTime subtractMinute(long minute) {
 		this.minute -= minute;
 		this.replace();
 		return this;
 	}
-	public Time subtractSecond(long second) {
+	public CaptionTime subtractSecond(long second) {
 		this.second -= second;
 		this.replace();
 		return this;
 	}
-	public Time subtractTick(long tick) {
+	public CaptionTime subtractTick(long tick) {
 		this.tick -= tick;
 		this.replace();
 		return this;
 	}
 	
-	public Time addDay(long day) {
+	public CaptionTime addDay(long day) {
 		this.day += day;
 		this.replace();
 		return this;
 	}
-	public Time addHour(long hour) {
+	public CaptionTime addHour(long hour) {
 		this.hour += hour;
 		this.replace();
 		return this;
 	}
-	public Time addMinute(long minute) {
+	public CaptionTime addMinute(long minute) {
 		this.minute += minute;
 		this.replace();
 		return this;
 	}
-	public Time addSecond(long second) {
+	public CaptionTime addSecond(long second) {
 		this.second += second;
 		this.replace();
 		return this;
 	}
-	public Time addTick(long tick) {
+	public CaptionTime addTick(long tick) {
 		this.tick += tick;
 		this.replace();
 		return this;
 	}
 	
-	public Time setDay(long day) {
+	public CaptionTime setDay(long day) {
 		this.day = day;
 		this.replace();
 		return this;
 	}
-	public Time setHour(long hour) {
+	public CaptionTime setHour(long hour) {
 		this.hour = hour;
 		this.replace();
 		return this;
 	}
-	public Time setMinute(long minute) {
+	public CaptionTime setMinute(long minute) {
 		this.minute = minute;
 		this.replace();
 		return this;
 	}
-	public Time setSecond(long second) {
+	public CaptionTime setSecond(long second) {
 		this.second = second;
 		this.replace();
 		return this;
 	}
-	public Time setTick(long tick) {
+	public CaptionTime setTick(long tick) {
 		this.tick = tick;
 		this.replace();
 		return this;
 	}
-	public Time setAllTicks(long allTicks) {
+	public CaptionTime setAllTicks(long allTicks) {
 		this.allTicks = allTicks;
 		return this;
 	}
@@ -169,22 +169,22 @@ public class Time implements ICaptionTime {
 	public int hashCode() {return (int) this.hash();}
 	public boolean equals(Object obj) {return equalsTime(obj);}
 	public String toString() {return toStringTime(false);}
-	public Time clone() {return this.copy();}
+	public CaptionTime clone() {return this.copy();}
 
-	public Time copy() {return new Time(ticks);}
+	public CaptionTime copy() {return new CaptionTime(ticks);}
 	
 // static
 	
-	public static Time getTime(JsonElement e) {
+	public static CaptionTime getTime(JsonElement e) {
 		if(e.isJsonObject()) {
 			return getTime(e.getAsJsonObject());
 		}else if(e.isJsonPrimitive()) {
 			return getTime(e.getAsJsonPrimitive());
 		}
-		return new Time();
+		return new CaptionTime();
 	}
 	
-	public static Time getTime(JsonPrimitive json) {
+	public static CaptionTime getTime(JsonPrimitive json) {
 		long day = 0;
 		long hour = 0;
 		long min = 0;
@@ -196,10 +196,10 @@ public class Time implements ICaptionTime {
 			tick = json.getAsLong();
 		}
 		
-		return new Time(day, hour, min, sec, tick);
+		return new CaptionTime(day, hour, min, sec, tick);
 	}
 	
-	public static Time getTime(String time) {
+	public static CaptionTime getTime(String time) {
 		long day = 0;
 		long hour = 0;
 		long min = 0;
@@ -219,11 +219,11 @@ public class Time implements ICaptionTime {
 		}else {
 			tick = Long.parseLong(time);
 		}
-		return new Time(day, hour, min, sec, tick);
+		return new CaptionTime(day, hour, min, sec, tick);
 	}
 	
-	public static Time getTime(JsonObject obj) {
-		return new Time(
+	public static CaptionTime getTime(JsonObject obj) {
+		return new CaptionTime(
 						time(obj, "d", "ds", "day",   "days"),
 						time(obj, "h", "hs", "hour",   "hours"),
 						time(obj, "m", "ms", "minute", "minutes"),
