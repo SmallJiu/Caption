@@ -1,4 +1,4 @@
-package cat.jiu.dialog;
+package cat.jiu.caption;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 
@@ -7,7 +7,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
 
-public class DialogNetworkHandler {
+public class CaptionNetworkHandler {
 	private SimpleNetworkWrapper channel;
 	private static int ID = 0;
 
@@ -15,9 +15,9 @@ public class DialogNetworkHandler {
 		return ID++;
 	}
 	
-	public DialogNetworkHandler() {
-		this.channel = NetworkRegistry.INSTANCE.newSimpleChannel(DialogMain.MODID);
-		this.channel.registerMessage(Dialog.MsgDialogue::handler, Dialog.MsgDialogue.class, nextID(), Side.CLIENT);
+	public CaptionNetworkHandler() {
+		this.channel = NetworkRegistry.INSTANCE.newSimpleChannel(CaptionMain.MODID);
+		this.channel.registerMessage(Caption.MsgDialogue::handler, Caption.MsgDialogue.class, nextID(), Side.CLIENT);
 	}
 	
 	/** server to client */

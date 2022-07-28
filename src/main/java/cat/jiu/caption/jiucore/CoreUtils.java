@@ -1,4 +1,4 @@
-package cat.jiu.dialog.jiucore;
+package cat.jiu.caption.jiucore;
 
 import java.math.BigInteger;
 import java.util.StringJoiner;

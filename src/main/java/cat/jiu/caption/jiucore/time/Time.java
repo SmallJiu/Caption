@@ -1,10 +1,10 @@
-package cat.jiu.dialog.jiucore.time;
+package cat.jiu.caption.jiucore.time;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
-import cat.jiu.dialog.jiucore.CoreUtils;
+import cat.jiu.caption.jiucore.CoreUtils;
 
 public class Time implements ITime {
 	protected long day;

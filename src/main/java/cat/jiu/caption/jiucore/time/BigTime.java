@@ -1,4 +1,4 @@
-package cat.jiu.dialog.jiucore.time;
+package cat.jiu.caption.jiucore.time;
 
 import java.math.BigInteger;
 
@@ -6,7 +6,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
-import cat.jiu.dialog.jiucore.CoreUtils;
+import cat.jiu.caption.jiucore.CoreUtils;
+import cat.jiu.core.util.JiuUtils;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class BigTime implements ITime {
@@ -211,7 +212,8 @@ public class BigTime implements ITime {
 	}
 	
 	public void readFromNBT(NBTTagCompound nbt) {
-		this.format(new BigInteger(nbt.getString("ticks")));
+		this.format(JiuUtils.big_integer.create(nbt.getString("ticks")));
+		this.setAllTicks(JiuUtils.big_integer.create(nbt.getString("allTicks")));
 	}
 	
 	public NBTTagCompound writeToNBT(NBTTagCompound nbt, boolean writeAll) {
@@ -224,11 +226,14 @@ public class BigTime implements ITime {
 			nbt.setString("tick", this.getBigTick().toString());
 		}
 		nbt.setString("ticks", this.getBigTicks().toString());
+		nbt.setString("allTicks", this.getBigAllTicks().toString());
+		nbt.setBoolean("isBig", true);
 		return nbt;
 	}
 	
 	public void toTime(JsonObject obj) {
 		this.format(obj.get("ticks").getAsBigInteger());
+		this.setAllTicks(JiuUtils.big_integer.create(obj.get("allTicks").getAsString()));
 	}
 	
 	public JsonObject toJson(boolean writeAll) {
@@ -241,6 +246,8 @@ public class BigTime implements ITime {
 			obj.addProperty("tick", this.tick);
 		}
 		obj.addProperty("ticks", this.ticks);
+		obj.addProperty("allTicks", this.getBigAllTicks().toString());
+		obj.addProperty("isBig", true);
 		
 		return obj;
 	}

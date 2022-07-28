@@ -1,4 +1,4 @@
-package cat.jiu.dialog;
+package cat.jiu.caption;
 
 import java.awt.Color;
 import java.io.IOException;
@@ -8,11 +8,9 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.Lists;
 
-import cat.jiu.dialog.jiucore.time.BigTime;
-import cat.jiu.dialog.jiucore.time.ITime;
-import cat.jiu.dialog.jiucore.time.Time;
-import cat.jiu.dialog.type.ShowPosType;
-
+import cat.jiu.caption.jiucore.time.ITime;
+import cat.jiu.caption.jiucore.time.Time;
+import cat.jiu.caption.type.ShowPosType;
 import io.netty.buffer.ByteBuf;
 
 import net.minecraft.client.Minecraft;
@@ -40,55 +38,54 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 /**
  * 1.添加延迟
  * 2.实现渲染
- *
  */
 @Mod.EventBusSubscriber
-public class Dialog {
+public class Caption {
 	public static final ITime NO_DELAY = new Time();
 	
-	public static void dialog(BlockPos pos, String talkEntityName, String text, ITime talkTime, ShowPosType side) {
-		dialog(pos, talkEntityName, text, talkTime, side, null, null);
+	public static void add(BlockPos pos, String talkEntityName, String text, ITime talkTime, ShowPosType side, ITime delay) {
+		add(pos, talkEntityName, text, talkTime, side, delay, null, null);
 	}
-	public static void dialog(EntityLiving entity, String talkEntityName, String text, ITime talkTime, ShowPosType side) {
-		dialog(entity.getPosition(), talkEntityName, text, talkTime, side);
+	public static void add(EntityLiving entity, String talkEntityName, String text, ITime talkTime, ShowPosType side, ITime delay) {
+		add(entity.getPosition(), talkEntityName, text, talkTime, side, delay);
 	}
-	public static void dialog(BlockPos pos, String talkEntityName, String text, ITime talkTime, ShowPosType side, @Nullable ResourceLocation img, @Nullable Sound sound) {
-		currentDialogs.add(new Type(pos, talkEntityName, text, talkTime, side, img, sound));
+	public static void add(BlockPos pos, String talkEntityName, String text, ITime talkTime, ShowPosType side, ITime delay, @Nullable ResourceLocation img, @Nullable Sound sound) {
+		currentCaptions.add(new Type(pos, talkEntityName, text, talkTime, side, delay, img, sound));
 	}
-	public static void dialog(EntityLiving entity, String talkEntityName, String text, ITime talkTime, ShowPosType side, @Nullable ResourceLocation img, @Nullable Sound sound) {
-		dialog(entity.getPosition(), talkEntityName, text, talkTime, side, img, sound);
+	public static void add(EntityLiving entity, String talkEntityName, String text, ITime talkTime, ShowPosType side, ITime delay, @Nullable ResourceLocation img, @Nullable Sound sound) {
+		add(entity.getPosition(), talkEntityName, text, talkTime, side, delay, img, sound);
 	}
 
 	@Optional.Method(modid = "jiucore")
-	public static void dialog(BlockPos pos, String talkEntityName, String text, cat.jiu.core.api.ITime talkTime, ShowPosType side) {
-		dialog(pos, talkEntityName, text, ITime.fromCoreTime(talkTime), side);
+	public static void add(BlockPos pos, String talkEntityName, String text, cat.jiu.core.api.ITime talkTime, ShowPosType side, ITime delay) {
+		add(pos, talkEntityName, text, ITime.fromCoreTime(talkTime), side, delay);
 	}
 	@Optional.Method(modid = "jiucore")
-	public static void dialog(EntityLiving entity, String talkEntityName, String text, cat.jiu.core.api.ITime talkTime, ShowPosType side) {
-		dialog(entity, talkEntityName, text, ITime.fromCoreTime(talkTime), side);
+	public static void add(EntityLiving entity, String talkEntityName, String text, cat.jiu.core.api.ITime talkTime, ShowPosType side, ITime delay) {
+		add(entity, talkEntityName, text, ITime.fromCoreTime(talkTime), side, delay);
 	}
 	@Optional.Method(modid = "jiucore")
-	public static void dialog(BlockPos pos, String talkEntityName, String text, cat.jiu.core.api.ITime talkTime, ShowPosType side, @Nullable ResourceLocation img, @Nullable Sound sound) {
-		dialog(pos, talkEntityName, text, ITime.fromCoreTime(talkTime), side, img, sound);
+	public static void add(BlockPos pos, String talkEntityName, String text, cat.jiu.core.api.ITime talkTime, ShowPosType side, ITime delay, @Nullable ResourceLocation img, @Nullable Sound sound) {
+		add(pos, talkEntityName, text, ITime.fromCoreTime(talkTime), side, delay, img, sound);
 	}
 	@Optional.Method(modid = "jiucore")
-	public static void dialog(EntityLiving entity, String talkEntityName, String text, cat.jiu.core.api.ITime talkTime, ShowPosType side, @Nullable ResourceLocation img, @Nullable Sound sound) {
-		dialog(entity, talkEntityName, text, ITime.fromCoreTime(talkTime), side, img, sound);
+	public static void add(EntityLiving entity, String talkEntityName, String text, cat.jiu.core.api.ITime talkTime, ShowPosType side, ITime delay, @Nullable ResourceLocation img, @Nullable Sound sound) {
+		add(entity, talkEntityName, text, ITime.fromCoreTime(talkTime), side, delay, img, sound);
 	}
 	
-	private static List<Dialog.Type> currentDialogs = Lists.newArrayList();
-	private static Dialog.Type current = null;
-	public static Dialog.Type getCurrentDialog() {return current.copy();}
-	public static boolean hasCurrentDialog() {return current != null;}
+	private static List<Caption.Type> currentCaptions = Lists.newArrayList();
+	private static Caption.Type current = null;
+	public static Caption.Type getCurrentCaption() {return current.copy();}
+	public static boolean hasCurrentCaption() {return current != null;}
 	
 	@SubscribeEvent
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
 		if(event.phase == Phase.END) {
-			if(!currentDialogs.isEmpty() && !hasCurrentDialog()) {
-				current = currentDialogs.get(0).copy();
-				currentDialogs.remove(0);
+			if(!currentCaptions.isEmpty() && !hasCurrentCaption()) {
+				current = currentCaptions.get(0).copy();
+				currentCaptions.remove(0);
 			}
-			if(hasCurrentDialog()) {
+			if(hasCurrentCaption()) {
 				if(current.talkTime.isDone()) {
 					current = null;
 					return;
@@ -96,20 +93,23 @@ public class Dialog {
 				
 				if(!current.sendToClient && event.side.isServer()) {
 					current.sendToClient = true;
-					DialogMain.net.sendMessageToPlayer(new MsgDialogue(current), (EntityPlayerMP) event.player);
+					CaptionMain.net.sendMessageToPlayer(new MsgDialogue(current), (EntityPlayerMP) event.player);
 				}
-				
-				current.talkTime.update();
-				if(!current.isPlaySound() && current.sound != null) {
-					if(current.sound.isLikeRecord()) {
-						event.player.world.playSound((double)current.pos.getX(), (double)current.pos.getY(), (double)current.pos.getZ(), current.sound.sound, SoundCategory.PLAYERS, 1F, 1F, false);
-					}else {
-						event.player.world.playSound(event.player, current.pos, current.sound.sound, SoundCategory.PLAYERS, 1F, 1F);
+				if(!current.delay.isDone()) {
+					current.delay.update();
+				}else {
+					current.talkTime.update();
+					if(!current.isPlaySound() && current.sound != null) {
+						if(current.sound.isLikeRecord()) {
+							event.player.world.playSound((double)current.pos.getX(), (double)current.pos.getY(), (double)current.pos.getZ(), current.sound.sound, SoundCategory.PLAYERS, 1F, 1F, false);
+						}else {
+							event.player.world.playSound(event.player, current.pos, current.sound.sound, SoundCategory.PLAYERS, 1F, 1F);
+						}
+						current.playSound = true;
 					}
-					current.playSound = true;
-				}
-				if(event.side.isClient()) {
-					current.render(Minecraft.getMinecraft().ingameGUI, Minecraft.getMinecraft().fontRenderer);
+					if(event.side.isClient()) {
+						current.render(Minecraft.getMinecraft().ingameGUI, Minecraft.getMinecraft().fontRenderer);
+					}
 				}
 			}
 		}
@@ -120,21 +120,22 @@ public class Dialog {
 		final String talkName;
 		final String text;
 		final ITime talkTime;
-		ITime delay; 
+		final ITime delay; 
 		final ShowPosType side;
 		final ResourceLocation img;
 		final Sound sound;
 		
-		public Type(BlockPos pos, String talkName, String text, ITime talkTime, ShowPosType side) {
-			this(pos, talkName, text, talkTime, side, null, null);
+		public Type(BlockPos pos, String talkName, String text, ITime talkTime, ShowPosType side, ITime delay) {
+			this(pos, talkName, text, talkTime, side, delay, null, null);
 		}
 		
-		public Type(BlockPos pos, String talkEntityName, String text, ITime talkTime, ShowPosType side, @Nullable ResourceLocation img, @Nullable Sound sound) {
+		public Type(BlockPos pos, String talkEntityName, String text, ITime talkTime, ShowPosType side, ITime delay, @Nullable ResourceLocation img, @Nullable Sound sound) {
 			this.pos = pos;
 			this.talkName = talkEntityName;
 			this.text = text;
 			this.talkTime = talkTime;
 			this.side = side;
+			this.delay = delay;
 			this.img = img;
 			this.sound = sound;
 		}
@@ -147,13 +148,14 @@ public class Dialog {
 		}
 
 		public Type copy() {
-			return new Type(pos, talkName, text, talkTime, side, img, sound);
+			return new Type(pos, talkName, text, talkTime, side, delay, img, sound);
 		}
 
 		public BlockPos getPos() {return pos;}
 		public String getName() {return talkName;}
 		public String getText() {return text;}
 		public ITime getTalkTime() {return talkTime;}
+		public ITime getDelay() {return delay;}
 		public ShowPosType getSide() {return side;}
 		public ResourceLocation getImg() {return img;}
 		public Sound getSound() {return sound;}
@@ -165,11 +167,8 @@ public class Dialog {
 			nbt.setTag("pos", toNBT(pos));
 			nbt.setString("name", this.talkName);
 			nbt.setString("text", this.text);
-			
-			NBTTagCompound time = this.talkTime.writeToNBT(new NBTTagCompound(), false);
-			time.setBoolean("isBig", this.talkTime instanceof BigTime);
-			nbt.setTag("time", time);
-			
+			nbt.setTag("time", this.talkTime.writeToNBT(new NBTTagCompound(), false));
+			nbt.setTag("delay", this.delay.writeToNBT(new NBTTagCompound(), false));
 			nbt.setInteger("side", this.side.getID());
 			if(this.img!=null)nbt.setString("img", this.img.toString());
 			if(this.sound!=null)nbt.setTag("sound", this.sound.toNBT());
@@ -181,16 +180,15 @@ public class Dialog {
 			BlockPos pos = toPos(nbt.getCompoundTag("pos"));
 			String talkEntityName = nbt.getString("name");
 			String text = nbt.getString("text");
-			ITime talkTime = null;
-				NBTTagCompound timeNBT = nbt.getCompoundTag("time");
-				talkTime = timeNBT.getBoolean("isBig") ? new BigTime() : new Time();
-				talkTime.readFromNBT(timeNBT);
+			ITime talkTime = ITime.from(nbt.getCompoundTag("time"));
+			ITime delay = ITime.from(nbt.getCompoundTag("delay"));
 			
 			ShowPosType side = ShowPosType.getType(nbt.getInteger("side"));
+			
 			ResourceLocation img = nbt.hasKey("img") ? new ResourceLocation(nbt.getString("img")) : null;
 			Sound sound = nbt.hasKey("sound") ? Sound.fromNBT(nbt.getCompoundTag("sound")) : null;
 			
-			return new Type(pos, talkEntityName, text, talkTime, side, img, sound);
+			return new Type(pos, talkEntityName, text, talkTime, side, delay, img, sound);
 		}
 		
 		private static BlockPos toPos(NBTTagCompound nbt) {
@@ -206,16 +204,16 @@ public class Dialog {
 	}
 	
 	public static class MsgDialogue implements IMessage {
-		Dialog.Type type;
+		Caption.Type type;
 		public MsgDialogue() {}
-		public MsgDialogue(Dialog.Type type) {
+		public MsgDialogue(Caption.Type type) {
 			this.type = type;
 		}
 		
 		@Override
 		public void fromBytes(ByteBuf buf) {
 			try {
-				this.type = Dialog.Type.fromNBT(new PacketBuffer(buf).readCompoundTag());
+				this.type = Caption.Type.fromNBT(new PacketBuffer(buf).readCompoundTag());
 			}catch(IOException e) {
 				e.printStackTrace();
 			}

@@ -1,4 +1,4 @@
-package cat.jiu.dialog.proxy;
+package cat.jiu.caption.proxy;
 
 import net.minecraftforge.fml.relauncher.Side;
 

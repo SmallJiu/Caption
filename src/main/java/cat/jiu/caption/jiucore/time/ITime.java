@@ -1,8 +1,8 @@
-package cat.jiu.dialog.jiucore.time;
+package cat.jiu.caption.jiucore.time;
 
 import com.google.gson.JsonObject;
 
-import cat.jiu.dialog.jiucore.CoreUtils;
+import cat.jiu.caption.jiucore.CoreUtils;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fml.common.Optional;
 
@@ -113,6 +113,7 @@ public interface ITime {
 	default void update() {this.update(1);}
 	default void readFromNBT(NBTTagCompound nbt) {
 		this.format(nbt.getLong("ticks"));
+		this.setAllTicks(nbt.getLong("allTicks"));
 	}
 	
 	default NBTTagCompound writeToNBT(NBTTagCompound nbt, boolean writeAll) {
@@ -125,11 +126,14 @@ public interface ITime {
 			nbt.setLong("tick", this.getTick());
 		}
 		nbt.setLong("ticks", this.getTicks());
+		nbt.setLong("allTicks", this.getAllTicks());
+		nbt.setBoolean("isBig", this instanceof BigTime);
 		return nbt;
 	}
 	
 	default void toTime(JsonObject obj) {
 		this.format(obj.get("ticks").getAsLong());
+		this.setAllTicks(obj.get("allTicks").getAsLong());
 	}
 	default JsonObject toJson(boolean writeAll) {
 		JsonObject obj = new JsonObject();
@@ -141,6 +145,8 @@ public interface ITime {
 			obj.addProperty("tick", this.getTick());
 		}
 		obj.addProperty("ticks", this.getTicks());
+		obj.addProperty("allTicks", this.getAllTicks());
+		obj.addProperty("isBig", this instanceof BigTime);
 		
 		return obj;
 	}
@@ -171,5 +177,16 @@ public interface ITime {
 			dTime.setAllTicks(((cat.jiu.core.util.BigTime)time).getAllTicks());
 		}
 		return dTime;
+	}
+	
+	public static ITime from(NBTTagCompound nbt) {
+		ITime time = nbt.getBoolean("isBig") ? new BigTime() : new Time();
+		time.readFromNBT(nbt);
+		return time;
+	}
+	public static ITime from(JsonObject obj) {
+		ITime time = obj.has("isBig") ? new BigTime() : new Time();
+		time.toTime(obj);
+		return time;
 	}
 }

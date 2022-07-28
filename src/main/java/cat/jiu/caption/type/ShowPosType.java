@@ -1,4 +1,4 @@
-package cat.jiu.dialog.type;
+package cat.jiu.caption.type;
 
 public enum ShowPosType {
 	UP, DOWN, LEFT, RIGHT, RAND_SIDE;
