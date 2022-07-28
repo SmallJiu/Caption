@@ -11,8 +11,8 @@ buildscript {
 apply plugin: 'net.minecraftforge.gradle.forge'
 
 version = "1.0.0-demo-"
-group = "cat.jiu.email"
-archivesBaseName = "Email"
+group = "cat.jiu.caption"
+archivesBaseName = "Caption"
 
 sourceCompatibility = targetCompatibility = '1.8'
 compileJava {

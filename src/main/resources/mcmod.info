@@ -1,11 +1,11 @@
 [
 	{
-	 	"modid": "dialog",
-	 	"name": "Dialog",
+	 	"modid": "caption",
+	 	"name": "Caption",
 	 	"description": "love of small_jiu",
 	 	"version": "${version}",
 	 	"mcversion": "${mcversion}",
-	 	"url": "https://github.com/SmallJiu/E-mail",
+	 	"url": "https://github.com/SmallJiu/Caption",
 	 	"updateUrl": "",
 	 	"authorList": ["small_jiu"],
 	 	"logoFile": "assets/email/mod_logo.png",
