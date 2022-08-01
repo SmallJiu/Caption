@@ -160,7 +160,7 @@ public interface ICaptionTime {
 			
 		}else if(this instanceof CaptionBigTime) {
 			time = new cat.jiu.core.util.BigTime(((CaptionBigTime)this).getBigTicks());
-			time.setAllTicks(((CaptionBigTime)this).getAllTicks());
+			((cat.jiu.core.util.BigTime)time).setAllTicks(((CaptionBigTime)this).getBigAllTicks());
 		}
 		return time;
 	}
@@ -174,7 +174,7 @@ public interface ICaptionTime {
 			
 		}else if(time instanceof cat.jiu.core.util.BigTime) {
 			dTime = new CaptionBigTime(((cat.jiu.core.util.BigTime)time).getTicks());
-			dTime.setAllTicks(((cat.jiu.core.util.BigTime)time).getAllTicks());
+			((CaptionBigTime)dTime).setAllTicks(((cat.jiu.core.util.BigTime)time).getBigAllTicks());
 		}
 		return dTime;
 	}

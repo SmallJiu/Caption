@@ -137,6 +137,8 @@ public class CaptionTime implements ICaptionTime {
 		if(ticks >= 20) {
 			tick = ticks % 20;
 			sec += ticks / 20;
+		}else {
+			tick = ticks;
 		}
 		if(sec >= 60) {
 			min = sec / 60;

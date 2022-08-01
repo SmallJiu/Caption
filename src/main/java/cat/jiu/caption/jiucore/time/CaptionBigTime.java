@@ -81,6 +81,8 @@ public class CaptionBigTime implements ICaptionTime {
 		if(CoreUtils.greaterOrEqual(ticks, twenty)) {
 			tick = ticks.remainder(twenty);
 			sec = ticks.divide(twenty);
+		}else {
+			tick = ticks;
 		}
 		if(CoreUtils.greaterOrEqual(sec, sixty)) {
 			min = sec.divide(sixty);

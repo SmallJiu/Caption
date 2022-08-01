@@ -4,10 +4,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import cat.jiu.caption.proxy.ServerProxy;
+
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLServerStartedEvent;
 import net.minecraftforge.fml.common.event.FMLServerStoppedEvent;
 
 @Mod(
@@ -17,7 +17,6 @@ import net.minecraftforge.fml.common.event.FMLServerStoppedEvent;
 	useMetadata = true,
 	dependencies = "after:jiucore@[1.1.1-a0-20220728034743,);",
 	acceptedMinecraftVersions = "[1.12.2]")
-@Mod.EventBusSubscriber
 public class CaptionMain {
 	public static final String MODID = "caption";
 	public static final String NAME = "Caption";
@@ -35,7 +34,7 @@ public class CaptionMain {
 	public void preInit(FMLPreInitializationEvent event) {
 		net = new CaptionNetworkHandler();
 	}
-	
+
 	@Mod.EventHandler
 	public void onServerStopped(FMLServerStoppedEvent event) {
 		Caption.clearCaptions();
