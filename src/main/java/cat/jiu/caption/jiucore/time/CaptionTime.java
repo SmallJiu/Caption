@@ -117,6 +117,30 @@ public class CaptionTime implements ICaptionTime {
 		return this;
 	}
 	
+	@Override
+	public CaptionTime add(ICaptionTime time) {
+		long ticks = 0;
+		if(time instanceof CaptionBigTime) {
+			ticks = this.ticks + ((CaptionBigTime)time).ticks.longValue();
+		}else {
+			ticks = this.ticks + time.getTicks();
+		}
+		this.format(ticks);
+		return this;
+	}
+	
+	@Override
+	public CaptionTime subtract(ICaptionTime time) {
+		long ticks = 0;
+		if(time instanceof CaptionBigTime) {
+			ticks = this.ticks - ((CaptionBigTime)time).ticks.longValue();
+		}else {
+			ticks = this.ticks - time.getTicks();
+		}
+		this.format(ticks);
+		return this;
+	}
+	
 	public void format(long ticks) {
 		if(ticks <= 0) {
 			this.day = 0;

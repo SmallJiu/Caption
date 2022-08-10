@@ -23,6 +23,7 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
@@ -31,6 +32,7 @@ import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
+
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.event.world.BlockEvent;
@@ -45,7 +47,6 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
- * 1.添加延迟
  * 2.实现渲染
  */
 @Mod.EventBusSubscriber
@@ -90,33 +91,59 @@ public class Caption {
 	
 	@SubscribeEvent
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-		if(event.phase == Phase.END && !event.player.world.isRemote) {
+		if(event.phase == Phase.END) {
 			next();
 			
 			if(hasCurrentCaption()) {
 				if(current.displayTime.isDone()) {
 					current = null;
 					return;
-				}else {
-					if(!current.delay.isDone()) {
-						current.delay.update();
-					}else {
-						current.displayTime.update();
+				}
+				
+				boolean flag = false;
+				
+				if(current.show_delay != null && current.show_delay.isDone()) {
+					if(current.sound != null && !current.sound.isPlayed()) {
+						flag = true;
+					}
+				}else if(current.delay.isDone()) {
+					if(current.sound != null && !current.sound.isPlayed()) {
+						flag = true;
 					}
 				}
 				
-				if(current.delay.isDone()) {
-					if(current.sound != null && !current.sound.isPlayed()) {
-						current.sound.setPlayed();
-						if(current.sound.isLikeRecord()) {
-							event.player.world.playSound((double)current.sound.pos.getX(), (double)current.sound.pos.getY(), (double)current.sound.pos.getZ(), current.sound.sound, SoundCategory.PLAYERS, 1F, 1F, false);
-						}else {
-							event.player.world.playSound(Minecraft.getMinecraft().player, current.sound.pos, current.sound.sound, SoundCategory.PLAYERS, 1F, 1F);
-						}
+				if(flag) {
+					current.sound.setPlayed();
+					if(current.sound.isLikeRecord()) {
+						event.player.world.playRecord(current.sound.pos, current.sound.sound);
+					}else {
+						event.player.world.playSound(null, current.sound.pos, current.sound.sound, SoundCategory.PLAYERS, 1F, 1F);
 					}
 				}
 			}
 		}
+	}
+	
+	static {
+		new Thread(()->{
+			while(true) {
+				try {Thread.sleep(50);}catch(InterruptedException e) { e.printStackTrace();}
+				if(CaptionMain.proxy.isClient()) {
+					if(Minecraft.getMinecraft().isGamePaused()) {
+						continue;
+					}
+				}
+				if(hasCurrentCaption()) {
+					if(!current.delay.isDone()) {
+						current.delay.update();
+					}else if(current.show_delay != null && !current.show_delay.isDone()) {
+						current.show_delay.update();
+					}else {
+						current.displayTime.update();
+					}
+				}
+			}
+		}).start();
 	}
 	
 	static void clearCaptions() {
@@ -127,11 +154,15 @@ public class Caption {
 	@SideOnly(Side.CLIENT)
 	@SubscribeEvent
 	public static void onRenderDebugInfo(RenderGameOverlayEvent.Text event) {
-		if(hasCurrentCaption() && Minecraft.getMinecraft().gameSettings.showDebugInfo) {
+		if(Minecraft.getMinecraft().gameSettings.showDebugInfo) {
 			event.getLeft().add("");
 			event.getLeft().add("Caption:");
-			event.getLeft().add("  Delay: " + current.delay.toStringTime(false));
-			event.getLeft().add("   Time: " + current.displayTime.toStringTime(false));
+			event.getLeft().add("  Surpluses: " + currentCaptions.size());
+			if(hasCurrentCaption()) {
+				event.getLeft().add("  Current:");
+				event.getLeft().add("    Delay: " + current.delay.toStringTime(false));
+				event.getLeft().add("     Time: " + current.displayTime.toStringTime(false));
+			}
 		}
 	}
 	
@@ -139,12 +170,11 @@ public class Caption {
 	@SubscribeEvent
 	public static void onRenderGameOverlay(RenderGameOverlayEvent.Post event) {
 		if(event.getType() == ElementType.ALL && hasCurrentCaption()) {
-			if(current.displayTime.isDone()) {
-				current = null;
-				return;
-			}else {
+			if(!current.displayTime.isDone()) {
 				Minecraft mc = Minecraft.getMinecraft();
-				if(current.delay.isDone() && !mc.gameSettings.hideGUI) {
+				
+				boolean lag = current.show_delay != null ? current.show_delay.isDone() : current.delay.isDone();
+				if(lag && !mc.gameSettings.hideGUI) {
 					current.draw(mc, mc.ingameGUI, mc.fontRenderer);
 				}
 			}
@@ -155,18 +185,20 @@ public class Caption {
 	@SubscribeEvent
 	public static void onPlayerBreakBlock(BlockEvent.BreakEvent event) {
 		if(event.getState().getBlock() == Blocks.DIAMOND_BLOCK) {
-			for(int i = 0; i < 20; i++) {
-				Caption.add(event.getPlayer(), "钻石块", "你为什么要这样对我！", new CaptionTime(0, 5, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), null, null);
+			for(int i = 0; i < 5; i++) {
+				Caption.add(event.getPlayer(), "钻石块", "你为什么要这样对我！", new CaptionTime(0, 5, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), null, new Caption.Sound(SoundEvents.BLOCK_GLASS_PLACE, event.getPos(), false));
 			}
 		}
 	}
 	
 	public static class Element {
 		protected static Random rand = new Random();
-		protected String displayName;
-		protected String displayText;
+		protected static ICaptionTime SHOW_DELAY = new CaptionTime(1,0);
+		private String displayName;
+		private String displayText;
+		protected final ICaptionTime delay;
+		protected final ICaptionTime show_delay;
 		protected final ICaptionTime displayTime;
-		protected final ICaptionTime delay; 
 		protected final DisplaySideType side;
 		protected ResourceLocation displayImg;
 		protected Sound sound;
@@ -178,15 +210,13 @@ public class Caption {
 			this.delay = displayDelay;
 			this.displayImg = displayImg;
 			this.sound = sound;
-			if(displaySide == DisplaySideType.RAND_SIDE) {
-				this.side = DisplaySideType.rand();
-			}else {
-				this.side = displaySide;
-			}
+			this.side = DisplaySideType.rand(displaySide);
+			this.show_delay = this.side != DisplaySideType.DOWN ? SHOW_DELAY.copy() : null;
 		}
 		
-		static ITextComponent EMPTY_TEXT = new TextComponentString("");
+		final static ITextComponent EMPTY_TEXT = new TextComponentString("");
 		
+		@SuppressWarnings("incomplete-switch")
 		@SideOnly(Side.CLIENT)
 		public void draw(Minecraft mc, GuiIngame gui, FontRenderer fr) {
 			ScaledResolution sr = new ScaledResolution(mc);
@@ -200,17 +230,29 @@ public class Caption {
 	        
 	        switch(this.side) {
 				case DOWN:
-					int y = sr.getScaledHeight() - 16 - 3 - 73;
-					fr.drawString(this.displayName, centerX - fr.getStringWidth(name) / 2, y, Color.YELLOW.getRGB(), false);
-					fr.drawString(this.displayText, centerX - fr.getStringWidth(text) / 2, y + 11, 16777215);
+					this.drawDown(name, text, fr, sr, centerX, centerY);
 					break;
 				case LEFT:
+					this.drawLeft(name, text, fr, sr, centerX, centerY);
 					break;
 				case RIGHT:
-					break;
-				case RAND_SIDE:
+					this.drawRight(name, text, fr, sr, centerX, centerY);
 					break;
 			}
+		}
+		
+		protected void drawDown(String name, String text, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
+			int y = sr.getScaledHeight() - 16 - 3 - 73;
+			fr.drawString(name, centerX - fr.getStringWidth(name) / 2, y, Color.YELLOW.getRGB(), false);
+			fr.drawString(text, centerX - fr.getStringWidth(text) / 2, y + 11, 16777215);
+		}
+		
+		protected void drawLeft(String name, String text, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
+			
+		}
+		
+		protected void drawRight(String name, String text, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
+			
 		}
 
 		public Element copy() {
@@ -221,6 +263,7 @@ public class Caption {
 		public String getDisplayText() {return displayText;}
 		public ICaptionTime getTalkTime() {return displayTime;}
 		public ICaptionTime getDelay() {return delay;}
+		public ICaptionTime getShowDelay() {return show_delay;}
 		public DisplaySideType getDisplaySide() {return side;}
 		public ResourceLocation getDisplayImg() {return displayImg;}
 		public Sound getSound() {return sound;}
@@ -280,9 +323,7 @@ public class Caption {
 		}
 		
 		public IMessage handler(MessageContext ctx) {
-			if(ctx.side.isClient()) {
-				currentCaptions.add(element);
-			}
+			currentCaptions.add(element);
 			return null;
 		}
 	}
@@ -319,7 +360,7 @@ public class Caption {
 		
 		public static Sound fromNBT(NBTTagCompound nbt) {
 			if(nbt!=null) {
-				return new Sound(new ResourceLocation(nbt.getString("sound")), toPos(nbt.getCompoundTag("pos")), nbt.getBoolean("likeRecord"));
+				return new Sound(SoundEvent.REGISTRY.getObjectById(nbt.getInteger("sound")), toPos(nbt.getCompoundTag("pos")), nbt.getBoolean("likeRecord"));
 			}
 			return null;
 		}

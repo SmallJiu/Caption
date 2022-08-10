@@ -8,6 +8,7 @@ import com.google.gson.JsonPrimitive;
 
 import cat.jiu.caption.jiucore.CoreUtils;
 import cat.jiu.core.util.JiuUtils;
+
 import net.minecraft.nbt.NBTTagCompound;
 
 public class CaptionBigTime implements ICaptionTime {
@@ -132,6 +133,30 @@ public class CaptionBigTime implements ICaptionTime {
 	}
 	public CaptionBigTime setAllTicks(BigInteger allTicks) {
 		this.allTicks = allTicks;
+		return this;
+	}
+	
+	@Override
+	public CaptionBigTime add(ICaptionTime time) {
+		BigInteger ticks = BigInteger.ZERO;
+		if(time instanceof CaptionBigTime) {
+			ticks = this.ticks.add(((CaptionBigTime)time).ticks);
+		}else {
+			ticks = this.ticks.add(BigInteger.valueOf(time.getTicks()));
+		}
+		this.format(ticks);
+		return this;
+	}
+	
+	@Override
+	public CaptionBigTime subtract(ICaptionTime time) {
+		BigInteger ticks = BigInteger.ZERO;
+		if(time instanceof CaptionBigTime) {
+			ticks = this.ticks.subtract(((CaptionBigTime)time).ticks);
+		}else {
+			ticks = this.ticks.subtract(BigInteger.valueOf(time.getTicks()));
+		}
+		this.format(ticks);
 		return this;
 	}
 	

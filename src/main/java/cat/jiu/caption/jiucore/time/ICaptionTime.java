@@ -30,6 +30,9 @@ public interface ICaptionTime {
 	ICaptionTime setSecond(long second);
 	ICaptionTime setTick(long tick);
 	ICaptionTime setAllTicks(long allTicks);
+	
+	ICaptionTime add(ICaptionTime time);
+	ICaptionTime subtract(ICaptionTime time);
 
 	ICaptionTime copy();
 	
@@ -106,11 +109,12 @@ public interface ICaptionTime {
 		
 		return false;
 	}
-	
+
+	default void update() {this.update(1);}
 	default void update(int subtractTick) {
 		this.format(this.getTicks() - subtractTick);
 	}
-	default void update() {this.update(1);}
+	
 	default void readFromNBT(NBTTagCompound nbt) {
 		this.format(nbt.getLong("ticks"));
 		this.setAllTicks(nbt.getLong("allTicks"));
