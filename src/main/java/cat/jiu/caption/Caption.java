@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.google.common.collect.Lists;
@@ -20,6 +21,7 @@ import io.netty.buffer.ByteBuf;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiIngame;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.resources.I18n;
@@ -53,8 +55,9 @@ import net.minecraftforge.fml.relauncher.SideOnly;
  * 2.实现渲染
  */
 @Mod.EventBusSubscriber
-public class Caption {
-	public static final ICaptionTime NO_DELAY = new CaptionTime();
+public final class Caption {
+	private static final ICaptionTime NO_DELAY = new CaptionTime();
+	public static ICaptionTime noDelay() {return NO_DELAY.copy();}
 	
 	public static void add(EntityPlayer player, Caption.Element e) {
 		CaptionMain.net.sendMessageToPlayer(new MsgCaption(e), (EntityPlayerMP) player);
@@ -69,8 +72,8 @@ public class Caption {
 		add(player, new Element(displayName, displayText, ICaptionTime.fromCoreTime(displayTime), displaySide, displayDelay, displayImg, sound));
 	}
 	
-	private static Map<String, List<Caption.Element>> currentCaptions = Maps.newHashMap();
-	private static Map<String, Caption.Element> current = Maps.newHashMap();
+	private static final Map<String, List<Caption.Element>> currentCaptions = Maps.newHashMap();
+	private static final Map<String, Caption.Element> current = Maps.newHashMap();
 	
 	@SideOnly(Side.CLIENT)
 	public static Caption.Element getCurrentCaption() {return current.get(Minecraft.getMinecraft().player.getName());}
@@ -110,29 +113,18 @@ public class Caption {
 			
 			if(hasCurrentCaption(name)) {
 				Caption.Element current = getCurrentCaption(name);
-				if(current.displayTime.isDone()) {
+				if(current.show_post_delay.isDone()) {
 					Caption.current.remove(name);
 					return;
 				}
-				
-				boolean flag = false;
-				
-				if(current.show_delay != null && current.show_delay.isDone()) {
+				if(current.show_pre_delay.isDone()) {
 					if(current.sound != null && !current.sound.isPlayed()) {
-						flag = true;
-					}
-				}else if(current.delay.isDone()) {
-					if(current.sound != null && !current.sound.isPlayed()) {
-						flag = true;
-					}
-				}
-				
-				if(flag) {
-					current.sound.setPlayed();
-					if(current.sound.isLikeRecord()) {
-						event.player.world.playRecord(current.sound.pos, current.sound.sound);
-					}else {
-						event.player.world.playSound(null, current.sound.pos, current.sound.sound, SoundCategory.PLAYERS, 1F, 1F);
+						current.sound.setPlayed();
+						if(current.sound.isLikeRecord()) {
+							event.player.world.playRecord(current.sound.pos, current.sound.sound);
+						}else {
+							event.player.world.playSound(null, current.sound.pos, current.sound.sound, SoundCategory.PLAYERS, 1F, 1F);
+						}
 					}
 				}
 			}
@@ -145,14 +137,27 @@ public class Caption {
 				try {Thread.sleep(50);}catch(InterruptedException e) { e.printStackTrace();}
 				if(CaptionMain.proxy.isClient() && Minecraft.getMinecraft().isGamePaused()) continue;
 				
-				for(Entry<String, Element> currents : current.entrySet()) {
-					Element current = currents.getValue();
+				for(Entry<String, Caption.Element> currents : Maps.newHashMap(current).entrySet()) {
+					if(currents.getValue() == null) {
+						current.remove(currents.getKey());
+					}
+				}
+				for(Entry<String, List<Caption.Element>> currents : Maps.newHashMap(currentCaptions).entrySet()) {
+					if(currents.getValue() == null || currents.getValue().isEmpty()) {
+						currentCaptions.remove(currents.getKey());
+					}
+				}
+				
+				for(Entry<String, Caption.Element> currents : current.entrySet()) {
+					Caption.Element current = currents.getValue();
 					if(!current.delay.isDone()) {
 						current.delay.update();
-					}else if(current.show_delay != null && !current.show_delay.isDone()) {
-						current.show_delay.update();
-					}else {
+					}else if(current.show_pre_delay != null && !current.show_pre_delay.isDone()) {
+						current.show_pre_delay.update();
+					}else if(!current.displayTime.isDone()) {
 						current.displayTime.update();
+					}else {
+						current.show_post_delay.update();
 					}
 				}
 			}
@@ -172,7 +177,7 @@ public class Caption {
 			event.getLeft().add("Caption:");
 			event.getLeft().add("  Surpluses: " + (currentCaptions.containsKey(Minecraft.getMinecraft().player.getName()) ? currentCaptions.get(Minecraft.getMinecraft().player.getName()).size() : 0));
 			if(hasCurrentCaption()) {
-				Element current = getCurrentCaption();
+				Caption.Element current = getCurrentCaption();
 				event.getLeft().add("  Current: " + current);
 				event.getLeft().add("     Next: " + getNextCaption());
 				event.getLeft().add("    Delay: " + current.delay.toStringTime(false));
@@ -183,16 +188,17 @@ public class Caption {
 	
 	@SideOnly(Side.CLIENT)
 	@SubscribeEvent
-	public static void onRenderGameOverlay(RenderGameOverlayEvent.Post event) {
-		if(event.getType() == ElementType.ALL && hasCurrentCaption()) {
-			Element current = getCurrentCaption();
-			if(!current.displayTime.isDone()) {
-				Minecraft mc = Minecraft.getMinecraft();
-				boolean isDone = current.show_delay != null ? current.show_delay.isDone() : current.delay.isDone();
-				
-				if(isDone && !mc.gameSettings.hideGUI) {
-					current.draw(mc, mc.ingameGUI, mc.fontRenderer);
-				}
+	public static void onRenderGameOverlay(RenderGameOverlayEvent.Pre event) {
+		if(event.getType() == ElementType.CHAT && hasCurrentCaption() && !Minecraft.getMinecraft().gameSettings.hideGUI) {
+			Caption.Element current = getCurrentCaption();
+			Minecraft mc = Minecraft.getMinecraft();
+			ScaledResolution sr = new ScaledResolution(mc);
+			if(current.delay.isDone() && !current.show_pre_delay.isDone()) {
+				current.preDraw(sr, mc, mc.ingameGUI, mc.fontRenderer);
+			}else if(current.show_pre_delay.isDone() && !current.displayTime.isDone()) {
+				current.draw(sr, mc, mc.ingameGUI, mc.fontRenderer);
+			}else if(current.displayTime.isDone() && !current.show_post_delay.isDone()) {
+				current.postDraw(sr, mc, mc.ingameGUI, mc.fontRenderer);
 			}
 		}
 	}
@@ -201,25 +207,32 @@ public class Caption {
 	@SubscribeEvent
 	public static void onPlayerBreakBlock(BlockEvent.BreakEvent event) {
 		if(event.getState().getBlock() == Blocks.DIAMOND_BLOCK) {
-			for(int i = 0; i < 5; i++) {
-				Caption.add(event.getPlayer(), "钻石块", "你为什么要这样对我！", new CaptionTime(0, 5, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), null, new Caption.Sound(SoundEvents.BLOCK_GLASS_PLACE, event.getPos(), false));
-			}
+//			for(int i = 0; i < 20; i++) {
+				Caption.add(event.getPlayer(), "钻石块sdfgdsfgsdfgdsfg", "你为什么要这样对我！asdgvasdvasdgasdvasdvasdrg", new CaptionTime(0, 5, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), null, new Caption.Sound(SoundEvents.BLOCK_GLASS_PLACE, event.getPos(), false));
+//			}
 		}
 	}
 	
+	@SuppressWarnings("incomplete-switch")
 	public static class Element {
 		protected static Random rand = new Random();
-		protected static ICaptionTime SHOW_DELAY = new CaptionTime(1,0);
+		protected static ICaptionTime SHOW_PRE_DELAY = new CaptionTime(16);
+		protected static ICaptionTime SHOW_POST_DELAY = new CaptionTime(16);
+		protected static ResourceLocation bg_texture = new ResourceLocation("caption:textures/gui/bg.png");
+		protected static ResourceLocation down_texture = new ResourceLocation("caption:textures/gui/down.png");
+		protected static ResourceLocation side_texture = new ResourceLocation("caption:textures/gui/side.png");
+		
 		private String displayName;
 		private String displayText;
 		protected final ICaptionTime delay;
-		protected final ICaptionTime show_delay;
+		protected final ICaptionTime show_pre_delay;
+		protected final ICaptionTime show_post_delay;
 		protected final ICaptionTime displayTime;
 		protected final DisplaySideType side;
 		protected ResourceLocation displayImg;
 		protected Sound sound;
 		
-		public Element(String displayName, String displayText, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
+		public Element(String displayName, String displayText, ICaptionTime displayTime, DisplaySideType displaySide, @Nonnull ICaptionTime displayDelay, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
 			this.displayName = displayName;
 			this.displayText = displayText;
 			this.displayTime = displayTime;
@@ -227,15 +240,14 @@ public class Caption {
 			this.displayImg = displayImg;
 			this.sound = sound;
 			this.side = DisplaySideType.rand(displaySide);
-			this.show_delay = this.side != DisplaySideType.DOWN ? SHOW_DELAY.copy() : null;
+			this.show_pre_delay = SHOW_PRE_DELAY.copy();
+			this.show_post_delay = SHOW_POST_DELAY.copy();
 		}
 		
 		final static ITextComponent EMPTY_TEXT = new TextComponentString("");
 		
-		@SuppressWarnings("incomplete-switch")
 		@SideOnly(Side.CLIENT)
-		public void draw(Minecraft mc, GuiIngame gui, FontRenderer fr) {
-			ScaledResolution sr = new ScaledResolution(mc);
+		public void draw(ScaledResolution sr, Minecraft mc, GuiIngame gui, FontRenderer fr) {
 			int width = sr.getScaledWidth();
 	        int height = sr.getScaledHeight();
 	        int centerX = width / 2 -1;
@@ -246,29 +258,110 @@ public class Caption {
 	        
 	        switch(this.side) {
 				case DOWN:
-					this.drawDown(name, text, fr, sr, centerX, centerY);
+					this.drawDown(DrawStage.DRAW, name, text, mc, gui, fr, sr, centerX, centerY);
 					break;
 				case LEFT:
-					this.drawLeft(name, text, fr, sr, centerX, centerY);
+					this.drawLeft(DrawStage.DRAW, name, text, mc, gui, fr, sr, centerX, centerY);
 					break;
 				case RIGHT:
-					this.drawRight(name, text, fr, sr, centerX, centerY);
+					this.drawRight(DrawStage.DRAW, name, text, mc, gui, fr, sr, centerX, centerY);
 					break;
 			}
 		}
 		
-		protected void drawDown(String name, String text, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
+		@SideOnly(Side.CLIENT)
+		public void preDraw(ScaledResolution sr, Minecraft mc, GuiIngame gui, FontRenderer fr) {
+			int width = sr.getScaledWidth();
+	        int height = sr.getScaledHeight();
+	        int centerX = width / 2 -1;
+	        int centerY = height / 2 - 4;
+	        
+	        switch(this.side) {
+				case DOWN:
+					this.drawDown(DrawStage.PRE, null, null, mc, gui, fr, sr, centerX, centerY);
+					break;
+				case LEFT:
+					this.drawLeft(DrawStage.PRE, null, null, mc, gui, fr, sr, centerX, centerY);
+					break;
+				case RIGHT:
+					this.drawRight(DrawStage.PRE, null, null, mc, gui, fr, sr, centerX, centerY);
+					break;
+			}
+		}
+		
+		@SideOnly(Side.CLIENT)
+		public void postDraw(ScaledResolution sr, Minecraft mc, GuiIngame gui, FontRenderer fr) {
+			int width = sr.getScaledWidth();
+	        int height = sr.getScaledHeight();
+	        int centerX = width / 2 -1;
+	        int centerY = height / 2 - 4;
+	        
+	        switch(this.side) {
+				case DOWN:
+					this.drawDown(DrawStage.POST, null, null, mc, gui, fr, sr, centerX, centerY);
+					break;
+				case LEFT:
+					this.drawLeft(DrawStage.POST, null, null, mc, gui, fr, sr, centerX, centerY);
+					break;
+				case RIGHT:
+					this.drawRight(DrawStage.POST, null, null, mc, gui, fr, sr, centerX, centerY);
+					break;
+			}
+		}
+		
+		protected void drawDown(DrawStage stage, String name, String text, Minecraft mc, GuiIngame gui, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
+			int x = sr.getScaledHeight() - 16 - 3 - 73;
 			int y = sr.getScaledHeight() - 16 - 3 - 73;
-			fr.drawString(name, centerX - fr.getStringWidth(name) / 2, y, Color.YELLOW.getRGB(), false);
-			fr.drawString(text, centerX - fr.getStringWidth(text) / 2, y + 11, 16777215);
+			switch(stage) {
+				case PRE:
+					int pre_part = this.show_pre_delay.getPart(16);
+					if(pre_part != -1) {
+						mc.getTextureManager().bindTexture(down_texture);
+						Gui.drawModalRectWithCustomSizedTexture(x - 55, y - 3, 0, 0, 256, 36 / pre_part, 256, 36 / pre_part);
+					}
+					break;
+				case DRAW:
+					mc.getTextureManager().bindTexture(down_texture);
+					Gui.drawModalRectWithCustomSizedTexture(x - 55, y - 3, 0, 0, 256, 36, 256, 36);
+					fr.drawString(name, x - 55 + 5, y + 1, Color.YELLOW.getRGB(), false);
+					fr.drawString(text, x - 55 + 5, y + 1 + 10, 16777215);
+					break;
+				case POST:
+					int post_part = 17 - this.show_post_delay.getPart(16);
+					if(post_part > 0) {
+						mc.getTextureManager().bindTexture(down_texture);
+						Gui.drawModalRectWithCustomSizedTexture(x - 55, y - 3, 0, 0, 256, 36 / post_part, 256, 36 / post_part);
+					}
+					break;
+			}
 		}
 		
-		protected void drawLeft(String name, String text, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
-			
+		protected void drawLeft(DrawStage stage, String name, String text, Minecraft mc, GuiIngame gui, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
+			switch(stage) {
+				case PRE:
+					
+					break;
+				case DRAW:
+					
+					break;
+					
+				case POST:
+					break;
+			}
 		}
 		
-		protected void drawRight(String name, String text, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
-			
+		protected void drawRight(DrawStage stage, String name, String text, Minecraft mc, GuiIngame gui, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
+			switch(stage) {
+				case PRE:
+					
+					break;
+				case DRAW:
+					
+					break;
+					
+				case POST:
+					break;
+			}
 		}
 
 		public Element copy() {
@@ -279,7 +372,7 @@ public class Caption {
 		public String getDisplayText() {return displayText;}
 		public ICaptionTime getTalkTime() {return displayTime;}
 		public ICaptionTime getDelay() {return delay;}
-		public ICaptionTime getShowDelay() {return show_delay;}
+		public ICaptionTime getShowDelay() {return show_pre_delay;}
 		public DisplaySideType getDisplaySide() {return side;}
 		public ResourceLocation getDisplayImg() {return displayImg;}
 		public Sound getSound() {return sound;}
@@ -319,6 +412,9 @@ public class Caption {
 		@Override
 		public String toString() {
 			return "Caption@" + Integer.toHexString(hashCode());
+		}
+		public static enum DrawStage {
+			PRE, DRAW, POST
 		}
 	}
 	
