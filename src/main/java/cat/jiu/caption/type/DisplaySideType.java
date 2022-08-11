@@ -8,13 +8,19 @@ public enum DisplaySideType {
 	static final DisplaySideType[] SIDE = {LEFT, RIGHT};
 	
 	private final int id;
+	public int getID() {return id;}
 	private DisplaySideType(int id) {
 		this.id = id;
 	}
-	public int getID() {return id;}
 	
 	static Random rand = new Random();
 	
+	public static DisplaySideType rand() {
+		return rand(DisplaySideType.values()[rand.nextInt(DisplaySideType.values().length-1)]);
+	}
+	public static DisplaySideType rand_side() {
+		return SIDE[rand.nextInt(SIDE.length-1)];
+	}
 	public static DisplaySideType rand(DisplaySideType type) {
 		if(type == DisplaySideType.RAND_SIDE) {
 			return rand_side();
@@ -25,19 +31,6 @@ public enum DisplaySideType {
 		}
 	}
 	
-	public static DisplaySideType rand() {
-		DisplaySideType t = DisplaySideType.values()[rand.nextInt(DisplaySideType.values().length-1)];
-		if(t == RAND_SIDE) {
-			return rand_side();
-		}else if(t == RAND) {
-			return rand();
-		}
-		return t;
-	}
-	public static DisplaySideType rand_side() {
-		DisplaySideType t = DisplaySideType.values()[rand.nextInt(SIDE.length-1)];
-		return t == DisplaySideType.RAND_SIDE ? rand_side() : t;
-	}
 	public static DisplaySideType getType(int id) {
 		for(DisplaySideType type : DisplaySideType.values()) {
 			if(type.getID()==id) {
