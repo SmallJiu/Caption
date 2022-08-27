@@ -29,6 +29,8 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.NBTTagString;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
@@ -67,28 +69,39 @@ public final class Caption {
 		}
 	}
 	
-	public static void add(EntityPlayer player, String displayName, String displayText, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
-		add(player, new Element(displayName, displayText, displayTime, displaySide, displayDelay, displayImg, sound));
+	public static void add(EntityPlayer player, String displayName, Object[] nameArg, String displayText, Object[] textArg, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
+		add(player, new Element(displayName, nameArg, displayText, textArg, displayTime, displaySide, displayDelay, displayImg, sound));
 	}
 
 	@Optional.Method(modid = "jiucore")
-	public static void add(EntityPlayer player, String displayName, String displayText, cat.jiu.core.api.ITime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
-		add(player, new Element(displayName, displayText, ICaptionTime.fromCoreTime(displayTime), displaySide, displayDelay, displayImg, sound));
+	public static void add(EntityPlayer player, String displayName, Object[] nameArg, String displayText, Object[] textArg, cat.jiu.core.api.ITime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
+		add(player, new Element(displayName, nameArg, displayText, textArg, ICaptionTime.fromCoreTime(displayTime), displaySide, displayDelay, displayImg, sound));
 	}
+	
+	
 	
 	// Test
 	public static final SoundEvent DEV_SOT_SeaLord_Last_Calipso = new SoundEvent(new ResourceLocation("caption:dev_sound"));
+	private static boolean test() {return true;}
 	@SubscribeEvent
 	public static void onPlayerBreakBlock(BlockEvent.BreakEvent event) {
 		if(event.getState().getBlock() == Blocks.DIAMOND_BLOCK) {
-			Caption.add(event.getPlayer(), "caption.dev.name", "caption.dev.msg.0", new CaptionTime(0, 4, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), null, new Caption.Sound(DEV_SOT_SeaLord_Last_Calipso, event.getPos(), false));
-			Caption.add(event.getPlayer(), "caption.dev.name", "caption.dev.msg.1", new CaptionTime(0, 8, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), null, null);
+			if(test()) {
+//				Caption.add(event.getPlayer(), "caption.dev.name", "caption.dev.msg.0", new CaptionTime(0, 4, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), null, new Caption.Sound(DEV_SOT_SeaLord_Last_Calipso, event.getPos(), false));
+//				Caption.add(event.getPlayer(), "caption.dev.name", "caption.dev.msg.1", new CaptionTime(0, 8, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), null, null);
+				Caption.add(event.getPlayer(), "caption.dev.name", new Object[] {System.currentTimeMillis()}, "caption.dev.msg.1", null, new CaptionTime(0, 1, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), null, null);
+			}else {
+				Caption.add(event.getPlayer(), "caption.dev.name", new Object[] {System.currentTimeMillis()}, "caption.dev.msg", null, new CaptionTime(0, 12, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), null, new Caption.Sound(DEV_SOT_SeaLord_Last_Calipso, event.getPos(), false, 1F, 1F));
+			}
 		}
 	}
 	@SubscribeEvent
 	public static void onSoundEvenrRegistration(RegistryEvent.Register<SoundEvent> event) {
 	    event.getRegistry().register(DEV_SOT_SeaLord_Last_Calipso.setRegistryName(DEV_SOT_SeaLord_Last_Calipso.getSoundName()));
 	}
+	
+	
+	
 	
 	private static final Map<String, List<Caption.Element>> currentCaptions = Maps.newHashMap();
 	private static final Map<String, Caption.Element> current = Maps.newHashMap();
@@ -145,7 +158,7 @@ public final class Caption {
 						if(current.sound.isLikeRecord()) {
 							event.player.world.playRecord(current.sound.pos, current.sound.sound);
 						}else {
-							event.player.world.playSound(event.player, current.sound.pos, current.sound.sound, SoundCategory.PLAYERS, 1F, 1F);
+							event.player.world.playSound(event.player, current.sound.pos, current.sound.sound, SoundCategory.PLAYERS, current.sound.volume, current.sound.pitch);
 						}
 					}
 				}
@@ -227,15 +240,18 @@ public final class Caption {
 	
 	@SuppressWarnings("incomplete-switch")
 	public static class Element {
-		protected static Random rand = new Random();
-		protected static ICaptionTime SHOW_PRE_DELAY = new CaptionTime(16);
-		protected static ICaptionTime SHOW_POST_DELAY = new CaptionTime(16);
-		protected static ResourceLocation bg_texture = new ResourceLocation("caption:textures/gui/bg.png");
-		protected static ResourceLocation down_texture = new ResourceLocation("caption:textures/gui/down.png");
-		protected static ResourceLocation side_texture = new ResourceLocation("caption:textures/gui/side.png");
+		protected static final Random rand = new Random();
+		protected static final ICaptionTime SHOW_PRE_DELAY = new CaptionTime(10);
+		protected static final ICaptionTime SHOW_POST_DELAY = new CaptionTime(10);
+		protected static final ResourceLocation bg_texture = new ResourceLocation("caption:textures/gui/bg.png");
+		protected static final ResourceLocation down_texture = new ResourceLocation("caption:textures/gui/down.png");
+		protected static final ResourceLocation side_texture = new ResourceLocation("caption:textures/gui/side.png");
+		private static final Object[] EMPTY_ARGS = new Object[0];
 		
 		protected String displayName;
+		protected Object[] nameArg;
 		protected String displayText;
+		protected Object[] textArg;
 		protected final ICaptionTime delay;
 		protected final ICaptionTime show_pre_delay;
 		protected final ICaptionTime show_post_delay;
@@ -244,9 +260,11 @@ public final class Caption {
 		protected ResourceLocation displayImg;
 		protected Sound sound;
 		
-		public Element(String displayName, String displayText, ICaptionTime displayTime, DisplaySideType displaySide, @Nonnull ICaptionTime displayDelay, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
+		public Element(String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, ICaptionTime displayTime, DisplaySideType displaySide, @Nonnull ICaptionTime displayDelay, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
 			this.displayName = displayName;
+			this.nameArg = nameArg == null ? EMPTY_ARGS : nameArg;
 			this.displayText = displayText;
+			this.textArg = textArg == null ? EMPTY_ARGS : textArg;
 			this.displayTime = displayTime;
 			this.delay = displayDelay;
 			this.displayImg = displayImg;
@@ -265,18 +283,15 @@ public final class Caption {
 	        int centerX = width / 2 -1;
 	        int centerY = height / 2 - 4;
 	        
-	        String name = I18n.format(this.displayName);
-	        String text = I18n.format(this.displayText);
-	        
 	        switch(this.side) {
 				case DOWN:
-					this.drawDown(DrawStage.DRAW, name, text, mc, gui, fr, sr, centerX, centerY);
+					this.drawDown(DrawStage.DRAW, mc, gui, fr, sr, centerX, centerY);
 					break;
 				case LEFT:
-					this.drawLeft(DrawStage.DRAW, name, text, mc, gui, fr, sr, centerX, centerY);
+					this.drawLeft(DrawStage.DRAW, mc, gui, fr, sr, centerX, centerY);
 					break;
 				case RIGHT:
-					this.drawRight(DrawStage.DRAW, name, text, mc, gui, fr, sr, centerX, centerY);
+					this.drawRight(DrawStage.DRAW, mc, gui, fr, sr, centerX, centerY);
 					break;
 			}
 		}
@@ -290,13 +305,13 @@ public final class Caption {
 	        
 	        switch(this.side) {
 				case DOWN:
-					this.drawDown(DrawStage.PRE, null, null, mc, gui, fr, sr, centerX, centerY);
+					this.drawDown(DrawStage.PRE, mc, gui, fr, sr, centerX, centerY);
 					break;
 				case LEFT:
-					this.drawLeft(DrawStage.PRE, null, null, mc, gui, fr, sr, centerX, centerY);
+					this.drawLeft(DrawStage.PRE, mc, gui, fr, sr, centerX, centerY);
 					break;
 				case RIGHT:
-					this.drawRight(DrawStage.PRE, null, null, mc, gui, fr, sr, centerX, centerY);
+					this.drawRight(DrawStage.PRE, mc, gui, fr, sr, centerX, centerY);
 					break;
 			}
 		}
@@ -310,45 +325,54 @@ public final class Caption {
 	        
 	        switch(this.side) {
 				case DOWN:
-					this.drawDown(DrawStage.POST, null, null, mc, gui, fr, sr, centerX, centerY);
+					this.drawDown(DrawStage.POST, mc, gui, fr, sr, centerX, centerY);
 					break;
 				case LEFT:
-					this.drawLeft(DrawStage.POST, null, null, mc, gui, fr, sr, centerX, centerY);
+					this.drawLeft(DrawStage.POST, mc, gui, fr, sr, centerX, centerY);
 					break;
 				case RIGHT:
-					this.drawRight(DrawStage.POST, null, null, mc, gui, fr, sr, centerX, centerY);
+					this.drawRight(DrawStage.POST, mc, gui, fr, sr, centerX, centerY);
 					break;
 			}
 		}
 		
-		protected void drawDown(DrawStage stage, String name, String text, Minecraft mc, GuiIngame gui, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
+		protected void drawDown(DrawStage stage, Minecraft mc, GuiIngame gui, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
 			int x = sr.getScaledHeight() - 16 - 3 - 73;
 			int y = sr.getScaledHeight() - 16 - 3 - 73;
+			
+			String name = I18n.format(this.displayName, this.nameArg);
+	        List<String> texts = this.splitString(I18n.format(this.displayText, this.textArg), fr);
+			int height = 16 + (texts.size() * 10);
+			
 			switch(stage) {
 				case PRE:
-					int pre_part = this.show_pre_delay.getPart(16);
+					int pre_part = 11 - this.show_pre_delay.getPart(10);
 					if(pre_part != -1) {
 						mc.getTextureManager().bindTexture(down_texture);
-						Gui.drawModalRectWithCustomSizedTexture(x - 55, y - 3, 0, 0, 256, 36 / pre_part, 256, 36 / pre_part);
+						float pre_h = (height / 10.0F) * pre_part;
+						Gui.drawModalRectWithCustomSizedTexture(x - 55, y - 3, 0, 0, 256, (int)pre_h, 256, (int)pre_h);
 					}
 					break;
 				case DRAW:
 					mc.getTextureManager().bindTexture(down_texture);
-					Gui.drawModalRectWithCustomSizedTexture(x - 55, y - 3, 0, 0, 256, 36, 256, 36);
+					Gui.drawModalRectWithCustomSizedTexture(x - 55, y - 3, 0, 0, 256, height, 256, height);
 					fr.drawString(name, x - 55 + 5, y + 1, Color.YELLOW.getRGB(), false);
-					fr.drawString(text, x - 55 + 5, y + 1 + 10, 16777215);
+					for(int i = 0; i < texts.size(); i++) {
+						fr.drawString(texts.get(i), x - 55 + 5, y + 1 + 10 + (i * 10), 16777215);
+					}
 					break;
 				case POST:
-					int post_part = 17 - this.show_post_delay.getPart(16);
+					int post_part = this.show_post_delay.getPart(10);
 					if(post_part > 0) {
 						mc.getTextureManager().bindTexture(down_texture);
-						Gui.drawModalRectWithCustomSizedTexture(x - 55, y - 3, 0, 0, 256, 36 / post_part, 256, 36 / post_part);
+						float post_h = height / 10.0F * post_part;
+						Gui.drawModalRectWithCustomSizedTexture(x - 55, y - 3, 0, 0, 256, (int)post_h, 256, (int)post_h);
 					}
 					break;
 			}
 		}
 		
-		protected void drawLeft(DrawStage stage, String name, String text, Minecraft mc, GuiIngame gui, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
+		protected void drawLeft(DrawStage stage, Minecraft mc, GuiIngame gui, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
 			switch(stage) {
 				case PRE:
 					
@@ -362,7 +386,7 @@ public final class Caption {
 			}
 		}
 		
-		protected void drawRight(DrawStage stage, String name, String text, Minecraft mc, GuiIngame gui, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
+		protected void drawRight(DrawStage stage, Minecraft mc, GuiIngame gui, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
 			switch(stage) {
 				case PRE:
 					
@@ -374,14 +398,42 @@ public final class Caption {
 				case POST:
 					break;
 			}
+		}
+		
+		protected List<String> splitString(String text, FontRenderer fr) {
+			List<String> texts = Lists.newArrayList();
+			int sideLength = this.side == DisplaySideType.DOWN ? 246 : 256;
+			if(fr.getStringWidth(text) >= sideLength) {
+				
+				char[] cache = text.toCharArray();
+				StringBuilder s = new StringBuilder();
+				
+				for(int i = 0; i < cache.length; i++) {
+					s.append(cache[i]);
+					String str = s.toString();
+					if(fr.getStringWidth(str) >= sideLength) {
+						texts.add(str);
+						s.setLength(0);
+					}
+				}
+				if(s.length() > 0) {
+					texts.add(s.toString());
+				}
+			}else {
+				texts.add(text);
+			}
+			
+			return texts;
 		}
 
 		public Element copy() {
-			return new Element(displayName, displayText, displayTime, side, delay, displayImg, sound);
+			return new Element(displayName, nameArg, displayText, textArg, displayTime, side, delay, displayImg, sound);
 		}
 		
 		public void changeTo(Element other) {
+			this.nameArg = other.nameArg;
 			this.displayText = other.displayText;
+			this.textArg = other.textArg;
 			this.displayTime.add(other.displayTime);
 		}
 
@@ -402,7 +454,19 @@ public final class Caption {
 			NBTTagCompound nbt = new NBTTagCompound();
 			
 			nbt.setString("name", this.displayName);
+			NBTTagList nameArgList = new NBTTagList();
+			for(int i = 0; i < this.nameArg.length; i++) {
+				nameArgList.appendTag(new NBTTagString(String.valueOf(this.nameArg[i])));
+			}
+			nbt.setTag("nameArg", nameArgList);
+			
 			nbt.setString("text", this.displayText);
+			NBTTagList textArgList = new NBTTagList();
+			for(int i = 0; i < this.textArg.length; i++) {
+				textArgList.appendTag(new NBTTagString(String.valueOf(this.textArg[i])));
+			}
+			nbt.setTag("textArg", textArgList);
+			
 			nbt.setTag("time", this.displayTime.writeToNBT(new NBTTagCompound(), false));
 			nbt.setTag("delay", this.delay.writeToNBT(new NBTTagCompound(), false));
 			nbt.setInteger("side", this.side.getID());
@@ -414,7 +478,17 @@ public final class Caption {
 		
 		public static Element fromNBT(NBTTagCompound nbt) {
 			String talkEntityName = nbt.getString("name");
+			NBTTagList nameArgList = nbt.getTagList("nameArg", 8);
+			Object[] nameArg = new Object[nameArgList.tagCount()];
+			for(int i = 0; i < nameArgList.tagCount(); i++) {
+				nameArg[i] = ((NBTTagString)nameArgList.get(i)).getString();
+			}
 			String text = nbt.getString("text");
+			NBTTagList textArgList = nbt.getTagList("textArg", 8);
+			Object[] textArg = new Object[textArgList.tagCount()];
+			for(int i = 0; i < textArgList.tagCount(); i++) {
+				textArg[i] = ((NBTTagString)textArgList.get(i)).getString();
+			}
 			ICaptionTime talkTime = ICaptionTime.from(nbt.getCompoundTag("time"));
 			ICaptionTime delay = ICaptionTime.from(nbt.getCompoundTag("delay"));
 			
@@ -423,7 +497,7 @@ public final class Caption {
 			ResourceLocation img = nbt.hasKey("img") ? new ResourceLocation(nbt.getString("img")) : null;
 			Sound sound = nbt.hasKey("sound") ? Sound.fromNBT(nbt.getCompoundTag("sound")) : null;
 			
-			return new Element(talkEntityName, text, talkTime, side, delay, img, sound);
+			return new Element(talkEntityName, nameArg, text, textArg, talkTime, side, delay, img, sound);
 		}
 		
 		@Override
@@ -474,21 +548,27 @@ public final class Caption {
 	public static class Sound {
 		private boolean played = false;
 		protected final SoundEvent sound;
+		protected final float volume;
+		protected final float pitch;
 		protected final boolean likeRecord;
 		protected final BlockPos pos;
 		
-		public Sound(ResourceLocation sound, BlockPos pos, boolean likeRecord) {
-			this(new SoundEvent(sound), pos, likeRecord);
+		public Sound(ResourceLocation sound, BlockPos pos, boolean likeRecord, float volume, float pitch) {
+			this(new SoundEvent(sound), pos, likeRecord, volume, pitch);
 		}
 		
-		public Sound(SoundEvent sound, BlockPos pos, boolean likeRecord) {
+		public Sound(SoundEvent sound, BlockPos pos, boolean likeRecord, float volume, float pitch) {
 			this.sound = sound;
+			this.volume = volume;
+			this.pitch = pitch;
 			this.pos = pos;
 			this.likeRecord = likeRecord;
 		}
 
 		public SoundEvent getSound() {return sound;}
 		public BlockPos getPos() {return pos;}
+		public float getSoundVolume() {return volume;}
+		public float getSoundPitch() {return pitch;}
 		public boolean isLikeRecord() {return likeRecord;}
 		public boolean isPlayed() {return played;}
 		public void setPlayed() {played = true;}
@@ -496,6 +576,8 @@ public final class Caption {
 		public NBTTagCompound toNBT() {
 			NBTTagCompound nbt = new NBTTagCompound();
 			nbt.setInteger("sound", SoundEvent.REGISTRY.getIDForObject(this.sound));
+			nbt.setFloat("volume", volume);
+			nbt.setFloat("pitch", pitch);
 			nbt.setTag("pos", toNBT(pos));
 			nbt.setBoolean("likeRecord", this.likeRecord);
 			return nbt;
@@ -503,7 +585,7 @@ public final class Caption {
 		
 		public static Sound fromNBT(NBTTagCompound nbt) {
 			if(nbt!=null) {
-				return new Sound(SoundEvent.REGISTRY.getObjectById(nbt.getInteger("sound")), toPos(nbt.getCompoundTag("pos")), nbt.getBoolean("likeRecord"));
+				return new Sound(SoundEvent.REGISTRY.getObjectById(nbt.getInteger("sound")), toPos(nbt.getCompoundTag("pos")), nbt.getBoolean("likeRecord"), nbt.getFloat("volume"), nbt.getFloat("pitch"));
 			}
 			return null;
 		}
