@@ -22,7 +22,7 @@ public class CaptionMain {
 	public static final String NAME = "Caption";
 	public static final String OWNER = "small_jiu";
 	public static final Logger log = LogManager.getLogger(NAME);
-	public static CaptionNetworkHandler net;
+	static CaptionNetworkHandler net;
 
 	@SidedProxy(
 		serverSide = "cat.jiu.caption.proxy.ServerProxy",

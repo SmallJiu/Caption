@@ -7,7 +7,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
 
-public class CaptionNetworkHandler {
+class CaptionNetworkHandler {
 	private SimpleNetworkWrapper channel;
 	private static int ID = 0;
 	private static int nextID() {

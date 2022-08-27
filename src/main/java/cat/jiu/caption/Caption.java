@@ -28,7 +28,6 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
-import net.minecraft.init.SoundEvents;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
@@ -40,6 +39,7 @@ import net.minecraft.util.text.TextComponentString;
 
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
+import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Optional;
@@ -60,7 +60,11 @@ public final class Caption {
 	public static ICaptionTime noDelay() {return NO_DELAY.copy();}
 	
 	public static void add(EntityPlayer player, Caption.Element e) {
-		CaptionMain.net.sendMessageToPlayer(new MsgCaption(e), (EntityPlayerMP) player);
+		if(player instanceof EntityPlayerMP) {
+			CaptionMain.net.sendMessageToPlayer(new MsgCaption(e), (EntityPlayerMP) player);
+		}else {
+			CaptionMain.net.sendMessageToServer(new MsgCaption(e));
+		}
 	}
 	
 	public static void add(EntityPlayer player, String displayName, String displayText, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
@@ -70,6 +74,20 @@ public final class Caption {
 	@Optional.Method(modid = "jiucore")
 	public static void add(EntityPlayer player, String displayName, String displayText, cat.jiu.core.api.ITime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
 		add(player, new Element(displayName, displayText, ICaptionTime.fromCoreTime(displayTime), displaySide, displayDelay, displayImg, sound));
+	}
+	
+	// Test
+	public static final SoundEvent DEV_SOT_SeaLord_Last_Calipso = new SoundEvent(new ResourceLocation("caption:dev_sound"));
+	@SubscribeEvent
+	public static void onPlayerBreakBlock(BlockEvent.BreakEvent event) {
+		if(event.getState().getBlock() == Blocks.DIAMOND_BLOCK) {
+			Caption.add(event.getPlayer(), "caption.dev.name", "caption.dev.msg.0", new CaptionTime(0, 4, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), null, new Caption.Sound(DEV_SOT_SeaLord_Last_Calipso, event.getPos(), false));
+			Caption.add(event.getPlayer(), "caption.dev.name", "caption.dev.msg.1", new CaptionTime(0, 8, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), null, null);
+		}
+	}
+	@SubscribeEvent
+	public static void onSoundEvenrRegistration(RegistryEvent.Register<SoundEvent> event) {
+	    event.getRegistry().register(DEV_SOT_SeaLord_Last_Calipso.setRegistryName(DEV_SOT_SeaLord_Last_Calipso.getSoundName()));
 	}
 	
 	private static final Map<String, List<Caption.Element>> currentCaptions = Maps.newHashMap();
@@ -85,7 +103,7 @@ public final class Caption {
 	public static boolean hasNextCaption() {return hasNextCaption(Minecraft.getMinecraft().player.getName());}
 	
 	public static Caption.Element getCurrentCaption(String name) {return current.get(name);}
-	public static boolean hasCurrentCaption(String name) {return current.containsKey(name);}
+	public static boolean hasCurrentCaption(String name) {return getCurrentCaption(name) != null;}
 	public static Caption.Element getNextCaption(String name) {
 		if(hasNextCaption(name)) {
 			return currentCaptions.get(name).get(0);
@@ -96,12 +114,16 @@ public final class Caption {
 		if(!currentCaptions.containsKey(name)) {
 			return false;
 		}
-		return !currentCaptions.get(name).isEmpty();
+		return currentCaptions.get(name).size() > 0;
 	}
 	
-	private static void next(String name) {
-		if(hasNextCaption(name) && !hasCurrentCaption(name)) {
-			current.put(name, currentCaptions.get(name).remove(0));
+	private static void next(String playerName) {
+		if(hasNextCaption(playerName) && !hasCurrentCaption(playerName)) {
+			current.put(playerName, currentCaptions.get(playerName).remove(0));
+		}else if(hasNextCaption(playerName) && hasCurrentCaption(playerName) && getCurrentCaption(playerName).displayTime.isDone()) {
+			if(getCurrentCaption(playerName).displayName.equalsIgnoreCase(getNextCaption(playerName).displayName)) {
+				getCurrentCaption(playerName).changeTo(currentCaptions.get(playerName).remove(0));
+			}
 		}
 	}
 	
@@ -118,12 +140,12 @@ public final class Caption {
 					return;
 				}
 				if(current.show_pre_delay.isDone()) {
-					if(current.sound != null && !current.sound.isPlayed()) {
+					if(event.player.world.isRemote && current.sound != null && !current.sound.isPlayed()) {
 						current.sound.setPlayed();
 						if(current.sound.isLikeRecord()) {
 							event.player.world.playRecord(current.sound.pos, current.sound.sound);
 						}else {
-							event.player.world.playSound(null, current.sound.pos, current.sound.sound, SoundCategory.PLAYERS, 1F, 1F);
+							event.player.world.playSound(event.player, current.sound.pos, current.sound.sound, SoundCategory.PLAYERS, 1F, 1F);
 						}
 					}
 				}
@@ -203,16 +225,6 @@ public final class Caption {
 		}
 	}
 	
-	// Test
-	@SubscribeEvent
-	public static void onPlayerBreakBlock(BlockEvent.BreakEvent event) {
-		if(event.getState().getBlock() == Blocks.DIAMOND_BLOCK) {
-//			for(int i = 0; i < 20; i++) {
-				Caption.add(event.getPlayer(), "钻石块sdfgdsfgsdfgdsfg", "你为什么要这样对我！asdgvasdvasdgasdvasdvasdrg", new CaptionTime(0, 5, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), null, new Caption.Sound(SoundEvents.BLOCK_GLASS_PLACE, event.getPos(), false));
-//			}
-		}
-	}
-	
 	@SuppressWarnings("incomplete-switch")
 	public static class Element {
 		protected static Random rand = new Random();
@@ -222,8 +234,8 @@ public final class Caption {
 		protected static ResourceLocation down_texture = new ResourceLocation("caption:textures/gui/down.png");
 		protected static ResourceLocation side_texture = new ResourceLocation("caption:textures/gui/side.png");
 		
-		private String displayName;
-		private String displayText;
+		protected String displayName;
+		protected String displayText;
 		protected final ICaptionTime delay;
 		protected final ICaptionTime show_pre_delay;
 		protected final ICaptionTime show_post_delay;
@@ -367,6 +379,11 @@ public final class Caption {
 		public Element copy() {
 			return new Element(displayName, displayText, displayTime, side, delay, displayImg, sound);
 		}
+		
+		public void changeTo(Element other) {
+			this.displayText = other.displayText;
+			this.displayTime.add(other.displayTime);
+		}
 
 		public String getDisplayName() {return displayName;}
 		public String getDisplayText() {return displayText;}
@@ -419,7 +436,7 @@ public final class Caption {
 	}
 	
 	public static class MsgCaption implements IMessage {
-		Caption.Element element;
+		protected Caption.Element element;
 		public MsgCaption() {}
 		public MsgCaption(Caption.Element e) {
 			this.element = e;
