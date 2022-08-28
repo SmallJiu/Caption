@@ -34,6 +34,7 @@ public interface ICaptionTime {
 	ICaptionTime add(ICaptionTime time);
 	ICaptionTime subtract(ICaptionTime time);
 
+	ICaptionTime reset();
 	ICaptionTime copy();
 	
 	default ICaptionTime setAllTicks(long s, long tick) {

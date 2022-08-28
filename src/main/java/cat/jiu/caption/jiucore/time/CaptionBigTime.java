@@ -59,6 +59,12 @@ public class CaptionBigTime implements ICaptionTime {
 		this(parseTick(day, h, m, s, tick));
 	}
 	
+	@Override
+	public CaptionBigTime reset() {
+		this.format(this.allTicks);
+		return this;
+	}
+	
 	protected static final BigInteger twenty = BigInteger.valueOf(20);
 	protected static final BigInteger sixty = BigInteger.valueOf(60);
 	protected static final BigInteger twenty_four = BigInteger.valueOf(24);

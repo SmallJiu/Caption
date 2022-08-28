@@ -141,6 +141,12 @@ public class CaptionTime implements ICaptionTime {
 		return this;
 	}
 	
+	@Override
+	public CaptionTime reset() {
+		this.format(this.allTicks);
+		return this;
+	}
+	
 	public void format(long ticks) {
 		if(ticks <= 0) {
 			this.day = 0;
