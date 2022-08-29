@@ -5,7 +5,10 @@ import cat.jiu.caption.jiucore.time.ICaptionTime;
 
 import net.minecraft.client.audio.MovingSound;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
+@SideOnly(Side.CLIENT)
 public class CapitonSound extends MovingSound {
 	protected final EntityPlayer player;
 	protected final ICaptionTime playTime;

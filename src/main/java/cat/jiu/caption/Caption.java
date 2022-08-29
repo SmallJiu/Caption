@@ -13,6 +13,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import cat.jiu.caption.jiucore.time.ICaptionTime;
+import cat.jiu.caption.event.CaptionDrawEvent;
 import cat.jiu.caption.jiucore.time.CaptionTime;
 import cat.jiu.caption.type.DisplaySideType;
 import cat.jiu.caption.type.DrawState;
@@ -24,7 +25,7 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiIngame;
 import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.client.multiplayer.WorldClient;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -37,11 +38,10 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentString;
 
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -84,8 +84,8 @@ public final class Caption {
 	
 	
 	// Test
-	private static final SoundEvent DEV_SOT_SeaLord_Last_Calipso = new SoundEvent(new ResourceLocation("caption:dev_sound"));
-	private static boolean test() {return false;}
+	private static final SoundEvent DEV_SOT_SeaLord_Last_Calipso = new SoundEvent(new ResourceLocation("caption:dev_sound")).setRegistryName(new ResourceLocation("caption:dev_sound"));
+	private static boolean test() {return true;}
 	@SubscribeEvent
 	public static void onPlayerBreakBlock(BlockEvent.BreakEvent event) {
 		if(event.getState().getBlock() == Blocks.DIAMOND_BLOCK) {
@@ -95,16 +95,16 @@ public final class Caption {
 				for(int i = 0; i < 13; i++) {
 					imgs.add(new ResourceLocation("caption:textures/gui/dev-gif/dev-gif_" + i + ".png"));
 				}
-				Caption.add(event.getPlayer(), "森林蝙蝠", null, "不是很喜欢加速火把嘛，把火把插进你PY让你好好加速saudyfasudfhbasudbsudgbyysudhvausdgfy", null, new CaptionTime(0, 5, 0), DisplaySideType.RIGHT, new CaptionTime(1, 0), true, imgs, 1, null);
+				Caption.add(event.getPlayer(), "森林蝙蝠", null, "不是很喜欢加速火把嘛，把火把插进你PY让你好好加速saudyfasudfhbasudbsudgbyysudhvausdgfy", null, new CaptionTime(0, 5, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), false, imgs, 1, null);
 			}else {
-				Caption.add(event.getPlayer(), "caption.dev.name", new Object[] {""}, "caption.dev.msg.0", null, new CaptionTime(0, 4, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), true, Lists.newArrayList(new ResourceLocation("caption:textures/gui/dev.png")), 0, new Caption.Sound(DEV_SOT_SeaLord_Last_Calipso, event.getPos(), false, SoundCategory.PLAYERS, 1F, 1F));
+				Caption.add(event.getPlayer(), "caption.dev.name", new Object[] {""}, "caption.dev.msg.0", null, new CaptionTime(0, 4, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), true, Lists.newArrayList(new ResourceLocation("caption:textures/gui/dev.png")), 0, new Caption.Sound(DEV_SOT_SeaLord_Last_Calipso, event.getPos(), true, SoundCategory.PLAYERS, 1F, 1F));
 				Caption.add(event.getPlayer(), "caption.dev.name", new Object[] {""}, "caption.dev.msg.1", null, new CaptionTime(0, 8, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), true, Lists.newArrayList(new ResourceLocation("caption:textures/gui/dev.png")), 0, null);
 			}
 		}
 	}
 	@SubscribeEvent
 	public static void onSoundEvenrRegistration(RegistryEvent.Register<SoundEvent> event) {
-	    event.getRegistry().register(DEV_SOT_SeaLord_Last_Calipso.setRegistryName(DEV_SOT_SeaLord_Last_Calipso.getSoundName()));
+	    event.getRegistry().register(DEV_SOT_SeaLord_Last_Calipso);
 	}
 	
 	
@@ -165,15 +165,21 @@ public final class Caption {
 					Caption.current.remove(name);
 					return;
 				}
-				if(event.player.world.isRemote && current.show_pre_delay.isDone()) {
-					if(current.sound != null && !current.sound.isPlayed()) {
-						current.sound.setPlayed();
-						if(!current.sound.isFollowPlayer()) {
-							event.player.world.playSound(event.player, current.sound.pos, current.sound.sound, current.sound.category, current.sound.volume, current.sound.pitch);
-						}else {
-							Minecraft.getMinecraft().getSoundHandler().playSound(new CapitonSound(event.player, current.sound, current.displayTime));
-						}
-					}
+			}
+		}
+	}
+	
+	@SideOnly(Side.CLIENT)
+	@SubscribeEvent
+	public static void onTick(TickEvent.PlayerTickEvent event) {
+		if(hasCurrentCaption(event.player.getName())) {
+			Caption.Element current = getCurrentCaption(event.player.getName());
+			if(current.show_pre_delay.isDone() && current.sound != null && !current.sound.isPlayed()) {
+				current.sound.setPlayed();
+				if(current.sound.isFollowPlayer()) {
+					Minecraft.getMinecraft().getSoundHandler().playSound(new CapitonSound(event.player, current.sound, current.displayTime));
+				}else {
+					event.player.world.playSound(event.player, current.sound.pos, current.sound.sound, current.sound.category, current.sound.volume, current.sound.pitch);
 				}
 			}
 		}
@@ -300,10 +306,9 @@ public final class Caption {
 			this.show_post_delay = SHOW_POST_DELAY.copy();
 		}
 		
-		final static ITextComponent EMPTY_TEXT = new TextComponentString("");
-		
 		@SideOnly(Side.CLIENT)
 		public void draw(ScaledResolution sr, Minecraft mc, GuiIngame gui, FontRenderer fr) {
+			if(MinecraftForge.EVENT_BUS.post(new CaptionDrawEvent(this, DrawState.DRAW))) return;
 			int width = sr.getScaledWidth();
 	        int height = sr.getScaledHeight();
 	        int centerX = width / 2 -1;
@@ -324,6 +329,7 @@ public final class Caption {
 		
 		@SideOnly(Side.CLIENT)
 		public void preDraw(ScaledResolution sr, Minecraft mc, GuiIngame gui, FontRenderer fr) {
+			if(MinecraftForge.EVENT_BUS.post(new CaptionDrawEvent(this, DrawState.PRE))) return;
 			int width = sr.getScaledWidth();
 	        int height = sr.getScaledHeight();
 	        int centerX = width / 2 -1;
@@ -344,6 +350,7 @@ public final class Caption {
 		
 		@SideOnly(Side.CLIENT)
 		public void postDraw(ScaledResolution sr, Minecraft mc, GuiIngame gui, FontRenderer fr) {
+			if(MinecraftForge.EVENT_BUS.post(new CaptionDrawEvent(this, DrawState.POST))) return;
 			int width = sr.getScaledWidth();
 	        int height = sr.getScaledHeight();
 	        int centerX = width / 2 -1;
@@ -408,7 +415,7 @@ public final class Caption {
 
 		@SideOnly(Side.CLIENT)
 		protected void drawLeft(DrawState stage, Minecraft mc, GuiIngame gui, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
-			int x = sr.getScaledHeight() - 16 - 3 - 73;
+//			int x = sr.getScaledWidth() - 16 - 3 - 73;
 			int y = sr.getScaledHeight() - 16 - 3 - 73;
 			int textureY = y - 70;
 			String name = I18n.format(this.displayName, this.nameArg);
@@ -418,7 +425,13 @@ public final class Caption {
 			switch(stage) {
 				case PRE:
 					if(this.needBg) {
-						
+						int pre_part = 6 - this.show_pre_delay.getPart(5);
+						if(pre_part > -1) {
+							float pre_h = (59.0F / 5.0F) * pre_part;
+							float pre_w = (95.0F / 5.0F) * pre_part;
+							mc.getTextureManager().bindTexture(side_texture);
+							Gui.drawModalRectWithCustomSizedTexture(0, textureY, 0, 0, (int) pre_w, (int) pre_h, pre_w, pre_h);
+						}
 					}
 					break;
 				case DRAW:
@@ -436,8 +449,11 @@ public final class Caption {
 								this.displayImgSerial = 0;
 							}
 						}
+						GlStateManager.pushMatrix();
+						GlStateManager.color(1,1,1,1);
 						mc.getTextureManager().bindTexture(this.displayImg.get(this.displayImgSerial));
 						Gui.drawModalRectWithCustomSizedTexture(0, textureY, 0, 0, 95, 59, 100, 60);
+						GlStateManager.popMatrix();
 					}else {
 						mc.getTextureManager().bindTexture(default_img);
 						Gui.drawModalRectWithCustomSizedTexture(0, textureY, 0, 0, 95, 59, 100, 60);
@@ -449,17 +465,32 @@ public final class Caption {
 					break;
 				case POST:
 					if(this.needBg) {
-						
+						int post_part = this.show_post_delay.getPart(5);
+						if(post_part > 0) {
+							float post_h = (59.0F / 5.0F) * post_part;
+							float post_w = (95.0F / 5.0F) * post_part;
+							mc.getTextureManager().bindTexture(side_texture);
+							Gui.drawModalRectWithCustomSizedTexture(0, textureY, 0, 0, (int) post_w, (int) post_h, post_w, post_h);
+						}
 					}
 					break;
 			}
 		}
 		
 		protected int displayImgSerial = 0;
-
+/*
+ *       -3
+ *       -2
+ *       -1
+ * -3-2-1 0 1 2 3  W
+ *        1
+ *        2
+ *        3
+ *        H
+ */
 		@SideOnly(Side.CLIENT)
 		protected void drawRight(DrawState stage, Minecraft mc, GuiIngame gui, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
-			int x = sr.getScaledHeight() - 16 - 3 - 73;
+//			int x = sr.getScaledWidth() - 16 - 3 - 73;
 			int y = sr.getScaledHeight() - 16 - 3 - 73;
 			int textureY = y - 70;
 			String name = I18n.format(this.displayName, this.nameArg);
@@ -469,7 +500,13 @@ public final class Caption {
 			switch(stage) {
 				case PRE:
 					if(this.needBg) {
-						
+						int pre_part = 6 - this.show_pre_delay.getPart(5);
+						if(pre_part > -1) {
+							float pre_w = (95.0F / 5.0F) * pre_part;
+							float pre_h = (59.0F / 5.0F) * pre_part;
+							mc.getTextureManager().bindTexture(side_texture);
+							Gui.drawModalRectWithCustomSizedTexture(sr.getScaledWidth(), textureY + 59, 0, 0, (int)-pre_w, (int) -pre_h, -pre_w, pre_h);
+						}
 					}
 					break;
 				case DRAW:
@@ -487,8 +524,11 @@ public final class Caption {
 								this.displayImgSerial = 0;
 							}
 						}
+						GlStateManager.pushMatrix();
+						GlStateManager.color(1,1,1,1);
 						mc.getTextureManager().bindTexture(this.displayImg.get(this.displayImgSerial));
 						Gui.drawModalRectWithCustomSizedTexture(sr.getScaledWidth() - 95, textureY, 0, 0, 95, 59, 100, 60);
+						GlStateManager.popMatrix();
 					}else {
 						mc.getTextureManager().bindTexture(default_img);
 						Gui.drawModalRectWithCustomSizedTexture(sr.getScaledWidth() - 95, textureY, 0, 0, 95, 59, 100, 60);
@@ -500,7 +540,13 @@ public final class Caption {
 					break;
 				case POST:
 					if(this.needBg) {
-						
+						int post_part = this.show_post_delay.getPart(5);
+						if(post_part > 0) {
+							float post_h = (59.0F / 5.0F) * post_part;
+							float post_w = (95.0F / 5.0F) * post_part;
+							mc.getTextureManager().bindTexture(side_texture);
+							Gui.drawModalRectWithCustomSizedTexture(sr.getScaledWidth(), textureY + 59, 0, 0, (int) -post_w, (int) -post_h, post_w, post_h);
+						}
 					}
 					break;
 			}
@@ -546,7 +592,8 @@ public final class Caption {
 		public String getDisplayText() {return displayText;}
 		public ICaptionTime getTalkTime() {return displayTime;}
 		public ICaptionTime getDelay() {return delay;}
-		public ICaptionTime getShowDelay() {return show_pre_delay;}
+		public ICaptionTime getShowPreDelay() {return show_pre_delay;}
+		public ICaptionTime getShowPostelay() {return show_post_delay;}
 		public DisplaySideType getDisplaySide() {return side;}
 		public List<ResourceLocation> getDisplayImg() {return displayImg;}
 		public Sound getSound() {return sound;}
