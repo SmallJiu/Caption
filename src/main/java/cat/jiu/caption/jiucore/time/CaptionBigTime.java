@@ -7,7 +7,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
 import cat.jiu.caption.jiucore.CoreUtils;
-import cat.jiu.core.util.JiuUtils;
 
 import net.minecraft.nbt.NBTTagCompound;
 
@@ -245,8 +244,8 @@ public class CaptionBigTime implements ICaptionTime {
 	}
 	
 	public void readFromNBT(NBTTagCompound nbt) {
-		this.format(JiuUtils.big_integer.create(nbt.getString("ticks")));
-		this.setAllTicks(JiuUtils.big_integer.create(nbt.getString("allTicks")));
+		this.format(new BigInteger(nbt.getString("ticks")));
+		this.setAllTicks(new BigInteger(nbt.getString("allTicks")));
 	}
 	
 	public NBTTagCompound writeToNBT(NBTTagCompound nbt, boolean writeAll) {
@@ -266,7 +265,7 @@ public class CaptionBigTime implements ICaptionTime {
 	
 	public void toTime(JsonObject obj) {
 		this.format(obj.get("ticks").getAsBigInteger());
-		this.setAllTicks(JiuUtils.big_integer.create(obj.get("allTicks").getAsString()));
+		this.setAllTicks(new BigInteger(obj.get("allTicks").getAsString()));
 	}
 	
 	public JsonObject toJson(boolean writeAll) {
