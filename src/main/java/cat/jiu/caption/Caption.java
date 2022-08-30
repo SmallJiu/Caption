@@ -73,12 +73,12 @@ public final class Caption {
 		}
 	}
 	
-	static void add(EntityPlayer player, CaptionType type, String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, boolean needBg, @Nullable List<ResourceLocation> displayImgs, long displayImgDelayTicks, @Nullable Sound sound) {
+	static void add(EntityPlayer player, CaptionType type, String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, boolean needBg, @Nullable List<ResourceLocation> displayImgs, long displayImgDelayTicks, @Nullable CaptionSoundEvent sound) {
 		add(player, new Element(type, displayName, nameArg, displayText, textArg, displayTime, displaySide, displayDelay, needBg, displayImgs, displayImgDelayTicks, sound));
 	}
 
 	@Optional.Method(modid = "jiucore")
-	static void add(EntityPlayer player, CaptionType type, String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, cat.jiu.core.api.ITime displayTime, DisplaySideType displaySide, cat.jiu.core.api.ITime displayDelay, boolean needBg, @Nullable List<ResourceLocation> displayImgs, long displayImgDelayTicks, @Nullable Sound sound) {
+	static void add(EntityPlayer player, CaptionType type, String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, cat.jiu.core.api.ITime displayTime, DisplaySideType displaySide, cat.jiu.core.api.ITime displayDelay, boolean needBg, @Nullable List<ResourceLocation> displayImgs, long displayImgDelayTicks, @Nullable CaptionSoundEvent sound) {
 		add(player, new Element(type, displayName, nameArg, displayText, textArg, ICaptionTime.fromCoreTime(displayTime), displaySide, ICaptionTime.fromCoreTime(displayDelay), needBg, displayImgs, displayImgDelayTicks, sound));
 	}
 	
@@ -86,7 +86,7 @@ public final class Caption {
 	
 	// Test
 	private static final SoundEvent DEV_SOT_SeaLord_Last_Calipso = new SoundEvent(new ResourceLocation("caption:dev_sound")).setRegistryName(new ResourceLocation("caption:dev_sound"));
-	private static boolean test() {return false;}
+	private static boolean test() {return true;}
 	@SubscribeEvent
 	public static void onPlayerBreakBlock(BlockEvent.BreakEvent event) {
 		if(event.getState().getBlock() == Blocks.DIAMOND_BLOCK) {
@@ -94,23 +94,24 @@ public final class Caption {
 				List<ResourceLocation> imgs = Lists.newArrayList();
 //				imgs.add(new ResourceLocation("caption:textures/gui/bat.png"));
 				for(int i = 0; i < 13; i++) {
-					imgs.add(new ResourceLocation("caption:textures/gui/dev-gif/dev-gif_" + i + ".png"));
+					imgs.add(new ResourceLocation("caption:textures/gui/dev/dev-gif/dev-gif_" + i + ".png"));
 				}
-				Caption.add(event.getPlayer(), CaptionType.Main, "森林蝙蝠", null, "不是很喜欢加速火把嘛，把火把插进你PY让你好好加速saudyfasudfhbasudbsudgbyysudhvausdgfy", null, new CaptionTime(0, 5, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), false, imgs, 1, null);
+				Caption.add(event.getPlayer(), CaptionType.Main, "森林蝙蝠", null, "不是很喜欢加速火把嘛，把火把插进你PY让你好好加速saudyfasudfhbasudbsudgbyysudhvausdgfy", null, new CaptionTime(0, 5, 0), DisplaySideType.LEFT, new CaptionTime(1, 0), true, imgs, 1, null);
 			}else {
-				Caption.add(event.getPlayer(), CaptionType.Main, "caption.dev.name", new Object[] {""}, "caption.dev.msg.0", null, new CaptionTime(0, 4, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), true, Lists.newArrayList(new ResourceLocation("caption:textures/gui/dev.png")), 0, new Caption.Sound(DEV_SOT_SeaLord_Last_Calipso, event.getPos(), true, SoundCategory.PLAYERS, 1F, 1F));
-				Caption.add(event.getPlayer(), CaptionType.Main, "caption.dev.name", new Object[] {""}, "caption.dev.msg.1", null, new CaptionTime(0, 8, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), true, Lists.newArrayList(new ResourceLocation("caption:textures/gui/dev.png")), 0, null);
+				Caption.add(event.getPlayer(), CaptionType.Main, "caption.dev.name", new Object[] {""}, "caption.dev.msg.0", null, new CaptionTime(0, 4, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), true, Lists.newArrayList(new ResourceLocation("caption:textures/gui/dev/dev.png")), 0, new Caption.CaptionSoundEvent(event.getPos(), true, DEV_SOT_SeaLord_Last_Calipso, SoundCategory.PLAYERS, 1F, 1F));
+				Caption.add(event.getPlayer(), CaptionType.Main, "caption.dev.name", new Object[] {""}, "caption.dev.msg.1", null, new CaptionTime(0, 8, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), true, Lists.newArrayList(new ResourceLocation("caption:textures/gui/dev/dev.png")), 0, null);
 			}
 		}
 		if(event.getState().getBlock() == Blocks.GOLD_BLOCK) {
-			Caption.add(event.getPlayer(), CaptionType.Secondary, "caption.dev.name", new Object[] {""}, "caption.dev.msg", null, new CaptionTime(0, 12, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), true, Lists.newArrayList(new ResourceLocation("caption:textures/gui/dev.png")), 0, new Caption.Sound(DEV_SOT_SeaLord_Last_Calipso, event.getPos(), true, SoundCategory.PLAYERS, 1F, 1F));
+			Caption.add(event.getPlayer(), CaptionType.Secondary, "caption.dev.name", new Object[] {""}, "caption.dev.msg", null, new CaptionTime(0, 12, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), true, Lists.newArrayList(new ResourceLocation("caption:textures/gui/dev/dev.png")), 0, new Caption.CaptionSoundEvent(event.getPos(), true, DEV_SOT_SeaLord_Last_Calipso, SoundCategory.PLAYERS, 1F, 1F));
 		}
 	}
-	
 	@SubscribeEvent
 	public static void onSoundEvenrRegistration(RegistryEvent.Register<SoundEvent> event) {
 	    event.getRegistry().register(DEV_SOT_SeaLord_Last_Calipso);
 	}
+	
+	
 	
 	private static final Map<String, Caption.Element> current = Maps.newHashMap();
 	private static final Map<String, List<Caption.Element>> currentCaptions = Maps.newHashMap();
@@ -253,7 +254,7 @@ public final class Caption {
 		}
 	}
 	private static class SecondarySound extends CapitonSound {
-		public SecondarySound(EntityPlayer player, Sound sound, ICaptionTime playTime) {
+		public SecondarySound(EntityPlayer player, CaptionSoundEvent sound, ICaptionTime playTime) {
 			super(player, sound, playTime);
 		}
 	}
@@ -422,21 +423,21 @@ public final class Caption {
 		/** caption time of display */
 		protected final ICaptionTime displayTime;
 		/** caption display side */
-		protected final DisplaySideType side;
+		protected DisplaySideType side;
 		/** true if you need black background */
-		protected final boolean needBg;
+		protected boolean needBg;
 		/** speaker image, can be null, the size must be 100x60 */
 		protected List<ResourceLocation> displayImg;
 		/** image delay, like mcmeta {@code frametime} */
 		protected final ICaptionTime imgDelay;
 		/** speak sound, can be null */
-		protected final Sound sound;
+		protected final CaptionSoundEvent sound;
 		
-		public Element(CaptionType type, String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, boolean needBG, @Nullable ResourceLocation displayImg, @Nullable Sound sound) {
+		public Element(CaptionType type, String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, boolean needBG, @Nullable ResourceLocation displayImg, @Nullable CaptionSoundEvent sound) {
 			this(type, displayName, nameArg, displayText, textArg, displayTime, displaySide, displayDelay, needBG, displayImg == null ? null : Lists.newArrayList(displayImg), 0, sound);
 		}
 		
-		public Element(CaptionType type, String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, boolean needBG, @Nullable List<ResourceLocation> displayImgs, long delayTicks, @Nullable Sound sound) {
+		public Element(CaptionType type, String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, boolean needBG, @Nullable List<ResourceLocation> displayImgs, long delayTicks, @Nullable CaptionSoundEvent sound) {
 			this.type = type;
 			this.displayName = displayName;
 			this.nameArg = nameArg == null ? EMPTY_ARGS : nameArg;
@@ -448,7 +449,7 @@ public final class Caption {
 			this.displayImg = displayImgs;
 			this.imgDelay = new CaptionTime(delayTicks);
 			this.sound = sound;
-			this.side = type.isMain ? DisplaySideType.rand(displaySide) : DisplaySideType.DOWN;
+			this.side = type.isMainCaption() ? DisplaySideType.rand(displaySide) : DisplaySideType.DOWN;
 			this.show_pre_delay = SHOW_PRE_DELAY.copy();
 			this.show_post_delay = SHOW_POST_DELAY.copy();
 		}
@@ -466,12 +467,12 @@ public final class Caption {
 					this.drawDown(DrawState.DRAW, mc, gui, fr, sr, centerX, centerY);
 					break;
 				case LEFT:
-					if(this.type.isMain) {
+					if(this.type.isMainCaption()) {
 						this.drawLeft(DrawState.DRAW, mc, gui, fr, sr, centerX, centerY);
 					}
 					break;
 				case RIGHT:
-					if(this.type.isMain) {
+					if(this.type.isMainCaption()) {
 						this.drawRight(DrawState.DRAW, mc, gui, fr, sr, centerX, centerY);
 					}
 					break;
@@ -491,12 +492,12 @@ public final class Caption {
 					this.drawDown(DrawState.PRE, mc, gui, fr, sr, centerX, centerY);
 					break;
 				case LEFT:
-					if(this.type.isMain) {
+					if(this.type.isMainCaption()) {
 						this.drawLeft(DrawState.PRE, mc, gui, fr, sr, centerX, centerY);
 					}
 					break;
 				case RIGHT:
-					if(this.type.isMain) {
+					if(this.type.isMainCaption()) {
 						this.drawRight(DrawState.PRE, mc, gui, fr, sr, centerX, centerY);
 					}
 					break;
@@ -516,12 +517,12 @@ public final class Caption {
 					this.drawDown(DrawState.POST, mc, gui, fr, sr, centerX, centerY);
 					break;
 				case LEFT:
-					if(this.type.isMain) {
+					if(this.type.isMainCaption()) {
 						this.drawLeft(DrawState.POST, mc, gui, fr, sr, centerX, centerY);
 					}
 					break;
 				case RIGHT:
-					if(this.type.isMain) {
+					if(this.type.isMainCaption()) {
 						this.drawRight(DrawState.POST, mc, gui, fr, sr, centerX, centerY);
 					}
 					break;
@@ -530,7 +531,7 @@ public final class Caption {
 
 		@SideOnly(Side.CLIENT)
 		protected void drawDown(DrawState stage, Minecraft mc, GuiIngame gui, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
-			if(!this.type.isMain && this.displayName.isEmpty()) return;
+			if(!this.type.isMainCaption() && this.displayName.isEmpty()) return;
 			int x = sr.getScaledHeight() - 16 - 3 - 73;
 			int y = sr.getScaledHeight() - 16 - 3 - 65;
 			
@@ -539,7 +540,7 @@ public final class Caption {
 			int height = 16 + (texts.size() * 10);
 			
 			int mainY = y;
-			if(this.type.isMain && hasCurrentSecondaryCaption()) {
+			if(this.type.isMainCaption() && hasCurrentSecondaryCaption()) {
 				if(!getCurrentSecondaryCaption().displayName.isEmpty() && getCurrentSecondaryCaption().delay.isDone()) {
 					mainY = y - height - 5;
 				}
@@ -752,6 +753,8 @@ public final class Caption {
 			this.nameArg = other.nameArg;
 			this.displayText = other.displayText;
 			this.textArg = other.textArg;
+			this.side = other.side;
+			this.needBg = other.needBg;
 			this.displayTime.add(other.displayTime);
 		}
 		
@@ -764,7 +767,7 @@ public final class Caption {
 		public ICaptionTime getShowPostelay() {return show_post_delay;}
 		public DisplaySideType getDisplaySide() {return side;}
 		public List<ResourceLocation> getDisplayImg() {return displayImg;}
-		public Sound getSound() {return sound;}
+		public CaptionSoundEvent getSound() {return sound;}
 		
 		public void setDisplayName(String displayName) {this.displayName = displayName;}
 		public void setDisplayText(String displayText) {this.displayText = displayText;}
@@ -772,7 +775,7 @@ public final class Caption {
 
 		public NBTTagCompound toNBT() {
 			NBTTagCompound nbt = new NBTTagCompound();
-			nbt.setBoolean("type", this.type.isMain);
+			nbt.setBoolean("type", this.type.isMainCaption());
 			nbt.setString("name", this.displayName);
 			NBTTagList nameArgList = new NBTTagList();
 			for(int i = 0; i < this.nameArg.length; i++) {
@@ -790,6 +793,7 @@ public final class Caption {
 			nbt.setTag("time", this.displayTime.writeToNBT(new NBTTagCompound(), false));
 			nbt.setTag("delay", this.delay.writeToNBT(new NBTTagCompound(), false));
 			nbt.setInteger("side", this.side.getID());
+			nbt.setBoolean("needBG", this.needBg);
 			
 			if(this.displayImg!=null) {
 				NBTTagCompound imgs = new NBTTagCompound();
@@ -829,15 +833,15 @@ public final class Caption {
 				imgs = Lists.newArrayList();
 				NBTTagCompound imgsTag = nbt.getCompoundTag("imgs");
 				imgDelay = imgsTag.getLong("delay");
-				for(int i = 0; i < imgsTag.getSize(); i++) {
-					if(imgsTag.hasKey(String.valueOf(i))) {
-						imgs.add(new ResourceLocation(imgsTag.getString(String.valueOf(i))));
+				for(String key : imgsTag.getKeySet()) {
+					if(!key.equals("delay")) {
+						imgs.add(new ResourceLocation(imgsTag.getString(key)));
 					}
 				}
 			}
 			
-			Sound sound = nbt.hasKey("sound") ? Sound.fromNBT(nbt.getCompoundTag("sound")) : null;
-			return new Element(type, talkEntityName, nameArg, text, textArg, talkTime, side, delay, true, imgs, imgDelay, sound);
+			CaptionSoundEvent sound = nbt.hasKey("sound") ? CaptionSoundEvent.fromNBT(nbt.getCompoundTag("sound")) : null;
+			return new Element(type, talkEntityName, nameArg, text, textArg, talkTime, side, delay, nbt.getBoolean("needBG"), imgs, imgDelay, sound);
 		}
 		
 		@Override
@@ -846,7 +850,7 @@ public final class Caption {
 		}
 	}
 	
-	public static class MsgCaption implements IMessage {
+	static class MsgCaption implements IMessage {
 		protected Caption.Element element;
 		public MsgCaption() {}
 		public MsgCaption(Caption.Element e) {
@@ -869,7 +873,7 @@ public final class Caption {
 		
 		public IMessage handler(MessageContext ctx) {
 			String name = ctx.side.isClient() ? Minecraft.getMinecraft().player.getName() : ctx.getServerHandler().player.getName();
-			if(this.element.type.isMain) {
+			if(this.element.type.isMainCaption()) {
 				if(!currentCaptions.containsKey(name)) {
 					currentCaptions.put(name, Lists.newArrayList());
 				}
@@ -885,8 +889,8 @@ public final class Caption {
 		}
 	}
 	
-	public static class Sound {
-		private boolean played = false;
+	public static class CaptionSoundEvent {
+		protected boolean played = false;
 		protected final SoundEvent sound;
 		protected final float volume;
 		protected final float pitch;
@@ -894,7 +898,14 @@ public final class Caption {
 		protected final BlockPos pos;
 		protected final SoundCategory category;
 		
-		public Sound(SoundEvent sound, BlockPos pos, boolean followPlayer, SoundCategory category, float volume, float pitch) {
+		public CaptionSoundEvent(SoundEvent sound, SoundCategory category, float volume, float pitch) {
+			this(BlockPos.ORIGIN, true, sound, category, pitch, pitch);
+		}
+		public CaptionSoundEvent(BlockPos pos, SoundEvent sound, SoundCategory category, float volume, float pitch) {
+			this(pos, false, sound, category, pitch, pitch);
+		}
+		
+		protected CaptionSoundEvent(BlockPos pos, boolean followPlayer, SoundEvent sound, SoundCategory category, float volume, float pitch) {
 			this.sound = sound;
 			this.category = category;
 			this.volume = volume;
@@ -923,14 +934,22 @@ public final class Caption {
 			return nbt;
 		}
 		
-		public static Sound fromNBT(NBTTagCompound nbt) {
+		public static CaptionSoundEvent fromNBT(NBTTagCompound nbt) {
 			if(nbt!=null) {
-				return new Sound(SoundEvent.REGISTRY.getObjectById(nbt.getInteger("sound")), toPos(nbt.getCompoundTag("pos")), nbt.getBoolean("likeRecord"), SoundCategory.getByName(nbt.getString("category")), nbt.getFloat("volume"), nbt.getFloat("pitch"));
+				return new CaptionSoundEvent(toPos(nbt.getCompoundTag("pos")), nbt.getBoolean("likeRecord"), SoundEvent.REGISTRY.getObjectById(nbt.getInteger("sound")), SoundCategory.getByName(nbt.getString("category")), nbt.getFloat("volume"), nbt.getFloat("pitch"));
 			}
 			return null;
 		}
 		private static BlockPos toPos(NBTTagCompound nbt) {
-			return new BlockPos(nbt.getInteger("x"), nbt.getInteger("y"), nbt.getInteger("z"));
+			int x = nbt.getInteger("x");
+			int y = nbt.getInteger("y");
+			int z = nbt.getInteger("z");
+			if(x == BlockPos.ORIGIN.getX()
+			&& y == BlockPos.ORIGIN.getY()
+			&& z == BlockPos.ORIGIN.getZ()) {
+				return BlockPos.ORIGIN;
+			}
+			return new BlockPos(x, y, z);
 		}
 		private static NBTTagCompound toNBT(BlockPos pos) {
 			NBTTagCompound nbt = new NBTTagCompound();

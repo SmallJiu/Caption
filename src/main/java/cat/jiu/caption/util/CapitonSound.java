@@ -12,7 +12,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 public class CapitonSound extends MovingSound {
 	protected final EntityPlayer player;
 	protected final ICaptionTime playTime;
-	public CapitonSound(EntityPlayer player, Caption.Sound sound, ICaptionTime playTime) {
+	public CapitonSound(EntityPlayer player, Caption.CaptionSoundEvent sound, ICaptionTime playTime) {
 		super(sound.getSound(), sound.getSoundCategory());
 		this.player = player;
 		this.playTime = playTime;
