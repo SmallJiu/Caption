@@ -1,6 +1,6 @@
 package cat.jiu.caption.util;
 
-import cat.jiu.caption.Caption;
+import cat.jiu.caption.element.CaptionSound;
 import cat.jiu.caption.jiucore.time.ICaptionTime;
 
 import net.minecraft.client.audio.MovingSound;
@@ -9,10 +9,10 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
-public class CapitonSound extends MovingSound {
+public class CapitonSndSound extends MovingSound {
 	protected final EntityPlayer player;
 	protected final ICaptionTime playTime;
-	public CapitonSound(EntityPlayer player, Caption.CaptionSoundEvent sound, ICaptionTime playTime) {
+	public CapitonSndSound(EntityPlayer player, CaptionSound sound, ICaptionTime playTime) {
 		super(sound.getSound(), sound.getSoundCategory());
 		this.player = player;
 		this.playTime = playTime;

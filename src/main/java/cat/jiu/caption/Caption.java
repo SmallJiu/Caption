@@ -13,12 +13,15 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import cat.jiu.caption.jiucore.time.ICaptionTime;
+import cat.jiu.caption.element.CaptionImage;
+import cat.jiu.caption.element.CaptionSound;
 import cat.jiu.caption.event.CaptionDrawEvent;
 import cat.jiu.caption.jiucore.time.CaptionTime;
 import cat.jiu.caption.type.CaptionType;
 import cat.jiu.caption.type.DisplaySideType;
 import cat.jiu.caption.type.DrawState;
-import cat.jiu.caption.util.CapitonSound;
+import cat.jiu.caption.util.CapitonSndSound;
+
 import io.netty.buffer.ByteBuf;
 
 import net.minecraft.client.Minecraft;
@@ -38,7 +41,7 @@ import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextFormatting;
 
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
@@ -73,13 +76,13 @@ public final class Caption {
 		}
 	}
 	
-	static void add(EntityPlayer player, CaptionType type, String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, boolean needBg, @Nullable List<ResourceLocation> displayImgs, long displayImgDelayTicks, @Nullable CaptionSoundEvent sound) {
-		add(player, new Element(type, displayName, nameArg, displayText, textArg, displayTime, displaySide, displayDelay, needBg, displayImgs, displayImgDelayTicks, sound));
+	static void add(EntityPlayer player, CaptionType type, String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, boolean needBg, @Nullable CaptionImage image, @Nullable CaptionSound sound) {
+		add(player, new Element(type, displayName, nameArg, displayText, textArg, displayTime, displaySide, displayDelay, needBg, image, sound));
 	}
 
 	@Optional.Method(modid = "jiucore")
-	static void add(EntityPlayer player, CaptionType type, String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, cat.jiu.core.api.ITime displayTime, DisplaySideType displaySide, cat.jiu.core.api.ITime displayDelay, boolean needBg, @Nullable List<ResourceLocation> displayImgs, long displayImgDelayTicks, @Nullable CaptionSoundEvent sound) {
-		add(player, new Element(type, displayName, nameArg, displayText, textArg, ICaptionTime.fromCoreTime(displayTime), displaySide, ICaptionTime.fromCoreTime(displayDelay), needBg, displayImgs, displayImgDelayTicks, sound));
+	static void add(EntityPlayer player, CaptionType type, String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, cat.jiu.core.api.ITime displayTime, DisplaySideType displaySide, cat.jiu.core.api.ITime displayDelay, boolean needBg, @Nullable CaptionImage image, @Nullable CaptionSound sound) {
+		add(player, new Element(type, displayName, nameArg, displayText, textArg, ICaptionTime.from(displayTime), displaySide, ICaptionTime.from(displayDelay), needBg, image, sound));
 	}
 	
 	
@@ -96,14 +99,14 @@ public final class Caption {
 				for(int i = 0; i < 13; i++) {
 					imgs.add(new ResourceLocation("caption:textures/gui/dev/dev-gif/dev-gif_" + i + ".png"));
 				}
-				Caption.add(event.getPlayer(), CaptionType.Main, "森林蝙蝠", null, "不是很喜欢加速火把嘛，把火把插进你PY让你好好加速saudyfasudfhbasudbsudgbyysudhvausdgfy", null, new CaptionTime(0, 5, 0), DisplaySideType.LEFT, new CaptionTime(1, 0), true, imgs, 1, null);
+				Caption.add(event.getPlayer(), CaptionType.Main, TextFormatting.RED + "森林蝙蝠", null, "不是很喜欢加速火把嘛，把火把插进你PY让你好好加速saudyfasudfhbasudbsudgbyysudhvausdgfy", null, new CaptionTime(0, 5, 0), DisplaySideType.LEFT, new CaptionTime(1, 0), true, new CaptionImage(imgs, new int[] {0,2,7,3,4,1,5,6}, 1), null);
 			}else {
-				Caption.add(event.getPlayer(), CaptionType.Main, "caption.dev.name", new Object[] {""}, "caption.dev.msg.0", null, new CaptionTime(0, 4, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), true, Lists.newArrayList(new ResourceLocation("caption:textures/gui/dev/dev.png")), 0, new Caption.CaptionSoundEvent(event.getPos(), true, DEV_SOT_SeaLord_Last_Calipso, SoundCategory.PLAYERS, 1F, 1F));
-				Caption.add(event.getPlayer(), CaptionType.Main, "caption.dev.name", new Object[] {""}, "caption.dev.msg.1", null, new CaptionTime(0, 8, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), true, Lists.newArrayList(new ResourceLocation("caption:textures/gui/dev/dev.png")), 0, null);
+				Caption.add(event.getPlayer(), CaptionType.Main, "caption.dev.name", new Object[] {""}, "caption.dev.msg.0", null, new CaptionTime(0, 4, 0), DisplaySideType.LEFT, new CaptionTime(1, 0), true, new CaptionImage(new ResourceLocation("caption:textures/gui/dev/dev.png")), new CaptionSound(DEV_SOT_SeaLord_Last_Calipso, SoundCategory.PLAYERS, 1F, 1F));
+				Caption.add(event.getPlayer(), CaptionType.Main, "caption.dev.name", new Object[] {""}, "caption.dev.msg.1", null, new CaptionTime(0, 8, 0), DisplaySideType.LEFT, new CaptionTime(1, 0), true, new CaptionImage(new ResourceLocation("caption:textures/gui/dev/dev.png")), null);
 			}
 		}
 		if(event.getState().getBlock() == Blocks.GOLD_BLOCK) {
-			Caption.add(event.getPlayer(), CaptionType.Secondary, "caption.dev.name", new Object[] {""}, "caption.dev.msg", null, new CaptionTime(0, 12, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), true, Lists.newArrayList(new ResourceLocation("caption:textures/gui/dev/dev.png")), 0, new Caption.CaptionSoundEvent(event.getPos(), true, DEV_SOT_SeaLord_Last_Calipso, SoundCategory.PLAYERS, 1F, 1F));
+			Caption.add(event.getPlayer(), CaptionType.Secondary, "caption.dev.name", new Object[] {""}, "caption.dev.msg", null, new CaptionTime(0, 12, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), true, new CaptionImage(new ResourceLocation("caption:textures/gui/dev/dev.png")), new CaptionSound(DEV_SOT_SeaLord_Last_Calipso, SoundCategory.PLAYERS, 1F, 1F));
 		}
 	}
 	@SubscribeEvent
@@ -235,9 +238,9 @@ public final class Caption {
 			if(current.show_pre_delay.isDone() && current.sound != null && !current.sound.isPlayed()) {
 				current.sound.setPlayed();
 				if(current.sound.isFollowPlayer()) {
-					Minecraft.getMinecraft().getSoundHandler().playSound(new CapitonSound(event.player, current.sound, current.displayTime));
+					Minecraft.getMinecraft().getSoundHandler().playSound(new CapitonSndSound(event.player, current.sound, current.displayTime));
 				}else {
-					event.player.world.playSound(event.player, current.sound.pos, current.sound.sound, current.sound.category, current.sound.volume, current.sound.pitch);
+					event.player.world.playSound(event.player, current.sound.getPos(), current.sound.getSound(), current.sound.getCategory(), current.sound.getVolume(), current.sound.getPitch());
 				}
 			}
 		}
@@ -246,15 +249,15 @@ public final class Caption {
 			if(current.show_pre_delay.isDone() && current.sound != null && !current.sound.isPlayed()) {
 				current.sound.setPlayed();
 				if(current.sound.isFollowPlayer()) {
-					Minecraft.getMinecraft().getSoundHandler().playSound(new SecondarySound(event.player, current.sound, current.displayTime));
+					Minecraft.getMinecraft().getSoundHandler().playSound(new SecondarySndSound(event.player, current.sound, current.displayTime));
 				}else {
-					event.player.world.playSound(event.player, current.sound.pos, current.sound.sound, current.sound.category, current.sound.volume, current.sound.pitch);
+					event.player.world.playSound(event.player, current.sound.getPos(), current.sound.getSound(), current.sound.getCategory(), current.sound.getVolume(), current.sound.getPitch());
 				}
 			}
 		}
 	}
-	private static class SecondarySound extends CapitonSound {
-		public SecondarySound(EntityPlayer player, CaptionSoundEvent sound, ICaptionTime playTime) {
+	private static class SecondarySndSound extends CapitonSndSound {
+		public SecondarySndSound(EntityPlayer player, CaptionSound sound, ICaptionTime playTime) {
 			super(player, sound, playTime);
 		}
 	}
@@ -292,8 +295,8 @@ public final class Caption {
 						}else {
 							current.show_post_delay.update();
 						}
-						if(!current.imgDelay.isDone()) {
-							current.imgDelay.update();
+						if(!current.img.isDone()) {
+							current.img.update();
 						}
 					}
 				}
@@ -325,8 +328,8 @@ public final class Caption {
 						}else {
 							current.show_post_delay.update();
 						}
-						if(!current.imgDelay.isDone()) {
-							current.imgDelay.update();
+						if(!current.img.isDone()) {
+							current.img.update();
 						}
 					}
 				}
@@ -370,7 +373,9 @@ public final class Caption {
 			ScaledResolution sr = new ScaledResolution(mc);
 			if(hasCurrentCaption()) {
 				Caption.Element current = getCurrentCaption();
-				
+
+				GlStateManager.pushMatrix();
+				GlStateManager.color(1,1,1,1);
 				if(current.delay.isDone() && !current.show_pre_delay.isDone()) {
 					current.preDraw(sr, mc, mc.ingameGUI, mc.fontRenderer);
 				}else if(current.show_pre_delay.isDone() && !current.displayTime.isDone()) {
@@ -378,10 +383,13 @@ public final class Caption {
 				}else if(current.displayTime.isDone() && !current.show_post_delay.isDone()) {
 					current.postDraw(sr, mc, mc.ingameGUI, mc.fontRenderer);
 				}
+				GlStateManager.popMatrix();
 			}
 			if(hasCurrentSecondaryCaption()) {
 				Caption.Element current = getCurrentSecondaryCaption();
 				
+				GlStateManager.pushMatrix();
+				GlStateManager.color(1,1,1,1);
 				if(current.delay.isDone() && !current.show_pre_delay.isDone()) {
 					current.preDraw(sr, mc, mc.ingameGUI, mc.fontRenderer);
 				}else if(current.show_pre_delay.isDone() && !current.displayTime.isDone()) {
@@ -389,6 +397,7 @@ public final class Caption {
 				}else if(current.displayTime.isDone() && !current.show_post_delay.isDone()) {
 					current.postDraw(sr, mc, mc.ingameGUI, mc.fontRenderer);
 				}
+				GlStateManager.popMatrix();
 			}
 		}
 	}
@@ -426,18 +435,16 @@ public final class Caption {
 		protected DisplaySideType side;
 		/** true if you need black background */
 		protected boolean needBg;
-		/** speaker image, can be null, the size must be 100x60 */
-		protected List<ResourceLocation> displayImg;
-		/** image delay, like mcmeta {@code frametime} */
-		protected final ICaptionTime imgDelay;
+		/** speaker images, can be null, the size must be 100x60 */
+		protected CaptionImage img;
 		/** speak sound, can be null */
-		protected final CaptionSoundEvent sound;
+		protected final CaptionSound sound;
 		
-		public Element(CaptionType type, String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, boolean needBG, @Nullable ResourceLocation displayImg, @Nullable CaptionSoundEvent sound) {
-			this(type, displayName, nameArg, displayText, textArg, displayTime, displaySide, displayDelay, needBG, displayImg == null ? null : Lists.newArrayList(displayImg), 0, sound);
+		public Element(CaptionType type, String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, boolean needBG, @Nullable CaptionImage img, @Nullable CaptionSound sound) {
+			this(type, displayName, nameArg, displayText, textArg, displayTime, displaySide, displayDelay, needBG, img, 0, sound);
 		}
 		
-		public Element(CaptionType type, String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, boolean needBG, @Nullable List<ResourceLocation> displayImgs, long delayTicks, @Nullable CaptionSoundEvent sound) {
+		public Element(CaptionType type, String displayName, @Nullable Object[] nameArg, String displayText, @Nullable Object[] textArg, ICaptionTime displayTime, DisplaySideType displaySide, ICaptionTime displayDelay, boolean needBG, @Nullable CaptionImage img, long delayTicks, @Nullable CaptionSound sound) {
 			this.type = type;
 			this.displayName = displayName;
 			this.nameArg = nameArg == null ? EMPTY_ARGS : nameArg;
@@ -446,8 +453,7 @@ public final class Caption {
 			this.displayTime = displayTime;
 			this.delay = displayDelay;
 			this.needBg = needBG;
-			this.displayImg = displayImgs;
-			this.imgDelay = new CaptionTime(delayTicks);
+			this.img = img == null ? CaptionImage.DEFAULT_IMAGE : img;
 			this.sound = sound;
 			this.side = type.isMainCaption() ? DisplaySideType.rand(displaySide) : DisplaySideType.DOWN;
 			this.show_pre_delay = SHOW_PRE_DELAY.copy();
@@ -531,19 +537,17 @@ public final class Caption {
 
 		@SideOnly(Side.CLIENT)
 		protected void drawDown(DrawState stage, Minecraft mc, GuiIngame gui, FontRenderer fr, ScaledResolution sr, int centerX, int centerY) {
-			if(!this.type.isMainCaption() && this.displayName.isEmpty()) return;
+			if(!this.type.isMainCaption() && this.displayName.isEmpty() && this.displayText.isEmpty()) return;
 			int x = sr.getScaledHeight() - 16 - 3 - 73;
-			int y = sr.getScaledHeight() - 16 - 3 - 65;
+			int y = sr.getScaledHeight() - 16 - 3 - 73;
 			
 			String name = I18n.format(this.displayName, this.nameArg);
 	        List<String> texts = this.splitString(I18n.format(this.displayText, this.textArg), fr);
 			int height = 16 + (texts.size() * 10);
 			
 			int mainY = y;
-			if(this.type.isMainCaption() && hasCurrentSecondaryCaption()) {
-				if(!getCurrentSecondaryCaption().displayName.isEmpty() && getCurrentSecondaryCaption().delay.isDone()) {
-					mainY = y - height - 5;
-				}
+			if(this.type.isMainCaption() && hasCurrentSecondaryCaption() && getCurrentSecondaryCaption().delay.isDone()) {
+				mainY = y - height - 2;
 			}
 			
 			switch(stage) {
@@ -609,26 +613,16 @@ public final class Caption {
 						mc.getTextureManager().bindTexture(side_down_texture);
 						Gui.drawModalRectWithCustomSizedTexture(0, textureY + 59, 0, 0, 95, height, 50, 35);
 					}
-					if(this.displayImg != null) {
-						if(this.displayImg.size()>1 && this.imgDelay.isDone()) {
-							this.displayImgSerial++;
-							this.imgDelay.reset();
-							if(this.displayImgSerial >= this.displayImg.size()) {
-								this.displayImgSerial = 0;
-							}
-						}
-						GlStateManager.pushMatrix();
-						GlStateManager.color(1,1,1,1);
-						mc.getTextureManager().bindTexture(this.displayImg.get(this.displayImgSerial));
-						Gui.drawModalRectWithCustomSizedTexture(0, textureY, 0, 0, 95, 59, 100, 60);
-						GlStateManager.popMatrix();
-					}else {
-						mc.getTextureManager().bindTexture(default_img);
-						Gui.drawModalRectWithCustomSizedTexture(0, textureY, 0, 0, 95, 59, 100, 60);
+					
+					if(this.img.hasMoreFrame() && this.img.isDone()) {
+						this.img.resetDelay();
 					}
-					fr.drawString(name, 2, textureY + 49, Color.YELLOW.getRGB(), false);
+					mc.getTextureManager().bindTexture(this.img.getImage());
+					Gui.drawModalRectWithCustomSizedTexture(0, textureY, 0, 0, 95, 59, 100, 60);
+					
+					fr.drawString(name, 3, textureY + 49, Color.YELLOW.getRGB(), false);
 					for(int i = 0; i < texts.size(); i++) {
-						fr.drawString(texts.get(i), 2, textureY + 61 + (i * 10), 16777215);
+						fr.drawString(texts.get(i), 3, textureY + 61 + (i * 10), 16777215);
 					}
 					break;
 				case POST:
@@ -673,7 +667,7 @@ public final class Caption {
 							float pre_w = (95.0F / 5.0F) * pre_part;
 							float pre_h = (59.0F / 5.0F) * pre_part;
 							mc.getTextureManager().bindTexture(side_texture);
-							Gui.drawModalRectWithCustomSizedTexture(sr.getScaledWidth(), textureY + 59, 0, 0, (int)-pre_w, (int) -pre_h, -pre_w, pre_h);
+							Gui.drawModalRectWithCustomSizedTexture(sr.getScaledWidth(), textureY + (int)pre_h, 0, 0, (int)-pre_w, (int) -pre_h, pre_w, pre_h);
 						}
 					}
 					break;
@@ -684,23 +678,11 @@ public final class Caption {
 						mc.getTextureManager().bindTexture(side_down_texture);
 						Gui.drawModalRectWithCustomSizedTexture(sr.getScaledWidth() - 95, textureY + 59, 0, 0, 95, height, 50, 35);
 					}
-					if(this.displayImg != null) {
-						if(this.displayImg.size()>1 && this.imgDelay.isDone()) {
-							this.displayImgSerial++;
-							this.imgDelay.reset();
-							if(this.displayImgSerial >= this.displayImg.size()) {
-								this.displayImgSerial = 0;
-							}
-						}
-						GlStateManager.pushMatrix();
-						GlStateManager.color(1,1,1,1);
-						mc.getTextureManager().bindTexture(this.displayImg.get(this.displayImgSerial));
-						Gui.drawModalRectWithCustomSizedTexture(sr.getScaledWidth() - 95, textureY, 0, 0, 95, 59, 100, 60);
-						GlStateManager.popMatrix();
-					}else {
-						mc.getTextureManager().bindTexture(default_img);
-						Gui.drawModalRectWithCustomSizedTexture(sr.getScaledWidth() - 95, textureY, 0, 0, 95, 59, 100, 60);
+					if(this.img.hasMoreFrame() && this.img.isDone()) {
+						this.img.resetDelay();
 					}
+					mc.getTextureManager().bindTexture(this.img.getImage());
+					Gui.drawModalRectWithCustomSizedTexture(sr.getScaledWidth() - 95, textureY, 0, 0, 95, 59, 100, 60);
 					fr.drawString(name, sr.getScaledWidth() - fr.getStringWidth(name) - 3, textureY + 49, Color.YELLOW.getRGB(), false);
 					for(int i = 0; i < texts.size(); i++) {
 						fr.drawString(texts.get(i), sr.getScaledWidth() - 93, textureY + 61 + (i * 10), 16777215);
@@ -713,7 +695,7 @@ public final class Caption {
 							float post_h = (59.0F / 5.0F) * post_part;
 							float post_w = (95.0F / 5.0F) * post_part;
 							mc.getTextureManager().bindTexture(side_texture);
-							Gui.drawModalRectWithCustomSizedTexture(sr.getScaledWidth(), textureY + 59, 0, 0, (int) -post_w, (int) -post_h, post_w, post_h);
+							Gui.drawModalRectWithCustomSizedTexture(sr.getScaledWidth(), textureY + (int)post_h, 0, 0, (int) -post_w, (int) -post_h, post_w, post_h);
 						}
 					}
 					break;
@@ -746,7 +728,7 @@ public final class Caption {
 		}
 		
 		public Element copy() {
-			return new Element(type, displayName, nameArg, displayText, textArg, displayTime, side, delay, true, displayImg, imgDelay.getAllTicks(), sound);
+			return new Element(type, displayName, nameArg, displayText, textArg, displayTime, side, delay, true, img, sound);
 		}
 		
 		public void changeTo(Element other) {
@@ -766,12 +748,12 @@ public final class Caption {
 		public ICaptionTime getShowPreDelay() {return show_pre_delay;}
 		public ICaptionTime getShowPostelay() {return show_post_delay;}
 		public DisplaySideType getDisplaySide() {return side;}
-		public List<ResourceLocation> getDisplayImg() {return displayImg;}
-		public CaptionSoundEvent getSound() {return sound;}
+		public CaptionImage getDisplayImg() {return img;}
+		public CaptionSound getSound() {return sound;}
 		
 		public void setDisplayName(String displayName) {this.displayName = displayName;}
 		public void setDisplayText(String displayText) {this.displayText = displayText;}
-		public void setDisplayImg(List<ResourceLocation> displayImg) {this.displayImg = displayImg;}
+		public void setDisplayImg(CaptionImage displayImg) {this.img = displayImg;}
 
 		public NBTTagCompound toNBT() {
 			NBTTagCompound nbt = new NBTTagCompound();
@@ -795,14 +777,7 @@ public final class Caption {
 			nbt.setInteger("side", this.side.getID());
 			nbt.setBoolean("needBG", this.needBg);
 			
-			if(this.displayImg!=null) {
-				NBTTagCompound imgs = new NBTTagCompound();
-				for(int i = 0; i < this.displayImg.size(); i++) {
-					imgs.setString(String.valueOf(i), this.displayImg.get(i).toString());
-				}
-				imgs.setLong("delay", this.imgDelay.getAllTicks());
-				nbt.setTag("imgs", imgs);
-			}
+			if(this.img!=null)nbt.setTag("image", this.img.toNBT());
 			if(this.sound!=null)nbt.setTag("sound", this.sound.toNBT());
 			
 			return nbt;
@@ -827,21 +802,9 @@ public final class Caption {
 			
 			DisplaySideType side = DisplaySideType.getType(nbt.getInteger("side"));
 			
-			List<ResourceLocation> imgs = null;
-			long imgDelay = 0;
-			if(nbt.hasKey("imgs")) {
-				imgs = Lists.newArrayList();
-				NBTTagCompound imgsTag = nbt.getCompoundTag("imgs");
-				imgDelay = imgsTag.getLong("delay");
-				for(String key : imgsTag.getKeySet()) {
-					if(!key.equals("delay")) {
-						imgs.add(new ResourceLocation(imgsTag.getString(key)));
-					}
-				}
-			}
-			
-			CaptionSoundEvent sound = nbt.hasKey("sound") ? CaptionSoundEvent.fromNBT(nbt.getCompoundTag("sound")) : null;
-			return new Element(type, talkEntityName, nameArg, text, textArg, talkTime, side, delay, nbt.getBoolean("needBG"), imgs, imgDelay, sound);
+			CaptionImage image = nbt.hasKey("image") ? CaptionImage.fromNBT(nbt.getCompoundTag("image")) : null;
+			CaptionSound sound = nbt.hasKey("sound") ? CaptionSound.fromNBT(nbt.getCompoundTag("sound")) : null;
+			return new Element(type, talkEntityName, nameArg, text, textArg, talkTime, side, delay, nbt.getBoolean("needBG"), image, sound);
 		}
 		
 		@Override
@@ -850,10 +813,10 @@ public final class Caption {
 		}
 	}
 	
-	static class MsgCaption implements IMessage {
-		protected Caption.Element element;
+	public static class MsgCaption implements IMessage {
+		private Caption.Element element;
 		public MsgCaption() {}
-		public MsgCaption(Caption.Element e) {
+		private MsgCaption(Caption.Element e) {
 			this.element = e;
 		}
 		
@@ -886,77 +849,6 @@ public final class Caption {
 			}
 			
 			return null;
-		}
-	}
-	
-	public static class CaptionSoundEvent {
-		protected boolean played = false;
-		protected final SoundEvent sound;
-		protected final float volume;
-		protected final float pitch;
-		protected final boolean isFollowPlayer;
-		protected final BlockPos pos;
-		protected final SoundCategory category;
-		
-		public CaptionSoundEvent(SoundEvent sound, SoundCategory category, float volume, float pitch) {
-			this(BlockPos.ORIGIN, true, sound, category, pitch, pitch);
-		}
-		public CaptionSoundEvent(BlockPos pos, SoundEvent sound, SoundCategory category, float volume, float pitch) {
-			this(pos, false, sound, category, pitch, pitch);
-		}
-		
-		protected CaptionSoundEvent(BlockPos pos, boolean followPlayer, SoundEvent sound, SoundCategory category, float volume, float pitch) {
-			this.sound = sound;
-			this.category = category;
-			this.volume = volume;
-			this.pitch = pitch;
-			this.pos = pos;
-			this.isFollowPlayer = followPlayer;
-		}
-
-		public SoundEvent getSound() {return sound;}
-		public BlockPos getPos() {return pos;}
-		public SoundCategory getSoundCategory() {return category;}
-		public float getSoundVolume() {return volume;}
-		public float getSoundPitch() {return pitch;}
-		public boolean isFollowPlayer() {return isFollowPlayer;}
-		public boolean isPlayed() {return played;}
-		public void setPlayed() {played = true;}
-		
-		public NBTTagCompound toNBT() {
-			NBTTagCompound nbt = new NBTTagCompound();
-			nbt.setInteger("sound", SoundEvent.REGISTRY.getIDForObject(this.sound));
-			nbt.setString("category", this.category.getName());
-			nbt.setFloat("volume", volume);
-			nbt.setFloat("pitch", pitch);
-			nbt.setTag("pos", toNBT(pos));
-			nbt.setBoolean("likeRecord", this.isFollowPlayer);
-			return nbt;
-		}
-		
-		public static CaptionSoundEvent fromNBT(NBTTagCompound nbt) {
-			if(nbt!=null) {
-				return new CaptionSoundEvent(toPos(nbt.getCompoundTag("pos")), nbt.getBoolean("likeRecord"), SoundEvent.REGISTRY.getObjectById(nbt.getInteger("sound")), SoundCategory.getByName(nbt.getString("category")), nbt.getFloat("volume"), nbt.getFloat("pitch"));
-			}
-			return null;
-		}
-		private static BlockPos toPos(NBTTagCompound nbt) {
-			int x = nbt.getInteger("x");
-			int y = nbt.getInteger("y");
-			int z = nbt.getInteger("z");
-			if(x == BlockPos.ORIGIN.getX()
-			&& y == BlockPos.ORIGIN.getY()
-			&& z == BlockPos.ORIGIN.getZ()) {
-				return BlockPos.ORIGIN;
-			}
-			return new BlockPos(x, y, z);
-		}
-		private static NBTTagCompound toNBT(BlockPos pos) {
-			NBTTagCompound nbt = new NBTTagCompound();
-			nbt.setInteger("x", pos.getX());
-			nbt.setInteger("y", pos.getY());
-			nbt.setInteger("z", pos.getZ());
-			return nbt;
 		}
 	}
 }

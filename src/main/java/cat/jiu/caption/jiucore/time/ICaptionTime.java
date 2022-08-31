@@ -171,7 +171,7 @@ public interface ICaptionTime {
 	}
 	
 	@Optional.Method(modid = "jiucore")
-	static ICaptionTime fromCoreTime(cat.jiu.core.api.ITime time) {
+	public static ICaptionTime from(cat.jiu.core.api.ITime time) {
 		ICaptionTime dTime = null;
 		if(time instanceof cat.jiu.core.util.Time) {
 			dTime = new CaptionTime(time.getTicks());
