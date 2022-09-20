@@ -122,7 +122,8 @@ public  class Caption {
 		for(CaptionType type : CaptionType.VALUES) {
 			if(currentCaptions.containsKey(type) && currentCaptions.get(type).containsKey(name)) {
 				i++;
-			}else if(alternativeCaptions.containsKey(type) && alternativeCaptions.get(type).containsKey(name)) {
+			}
+			if(alternativeCaptions.containsKey(type) && alternativeCaptions.get(type).containsKey(name)) {
 				i += alternativeCaptions.get(type).get(name).size();
 			}
 		}
