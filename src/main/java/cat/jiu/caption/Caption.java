@@ -11,6 +11,7 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import cat.jiu.caption.element.CaptionImage;
 import cat.jiu.caption.element.CaptionSound;
@@ -20,8 +21,11 @@ import cat.jiu.caption.jiucore.time.ICaptionTime;
 import cat.jiu.caption.type.CaptionType;
 import cat.jiu.caption.type.DisplaySideType;
 import cat.jiu.caption.type.DrawState;
+
 import cat.jiu.caption.util.CapitonSndSound;
+
 import io.netty.buffer.ByteBuf;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
@@ -40,6 +44,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.text.TextFormatting;
+
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.common.MinecraftForge;
@@ -50,24 +55,19 @@ import net.minecraftforge.fml.common.Optional;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedOutEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-/**
- * 2.实现渲染
- */
 @Mod.EventBusSubscriber
-public final class Caption {
+public  class Caption {
 	private static final ICaptionTime NO_DELAY = new CaptionTime();
 	public static ICaptionTime noDelay() {return NO_DELAY.copy();}
 	public static final Utils utils = new Utils();
 	
 	static void add(EntityPlayer player, Caption.Element element) {
 		if(player instanceof EntityPlayerMP) {
-//			((EntityPlayerMP) player).getAdvancements().getProgress(null).isDone();
 			CaptionMain.net.sendMessageToPlayer(new MsgCaption(element), (EntityPlayerMP) player);
 		}else {
 			CaptionMain.net.sendMessageToServer(new MsgCaption(element));
@@ -97,7 +97,7 @@ public final class Caption {
 				for(int i = 0; i < 13; i++) {
 					imgs.add(new ResourceLocation("caption:textures/gui/dev/dev-gif/dev-gif_" + i + ".png"));
 				}
-				Caption.add(event.getPlayer(), CaptionType.Main, TextFormatting.RED + "森林蝙蝠", null, "不是很喜欢加速火把嘛，把火把插进你PY让你好好加速saudyfasudfhbasudbsudgbyysudhvausdgfy", null, new CaptionTime(0, 5, 0), DisplaySideType.LEFT, new CaptionTime(1, 0), true, new CaptionImage(imgs, 1), null);
+				Caption.add(event.getPlayer(), CaptionType.Main, TextFormatting.RED + "森林蝙蝠", null, "不是很喜欢加速火把嘛，把火把插进你PY让你好好加速", null, new CaptionTime(0, 5, 0), DisplaySideType.LEFT, new CaptionTime(1, 0), true, new CaptionImage(imgs, 1), null);
 			}else {
 				Caption.add(event.getPlayer(), CaptionType.Main, "caption.dev.name", new Object[] {""}, "caption.dev.msg.0", null, new CaptionTime(0, 4, 0), DisplaySideType.LEFT, new CaptionTime(1, 0), true, new CaptionImage(new ResourceLocation("caption:textures/gui/dev/dev.png")), new CaptionSound(DEV_SOT_SeaLord_Last_Calipso, SoundCategory.PLAYERS, 1F, 1F));
 				Caption.add(event.getPlayer(), CaptionType.Main, "caption.dev.name", new Object[] {""}, "caption.dev.msg.1", null, new CaptionTime(0, 8, 0), DisplaySideType.LEFT, new CaptionTime(1, 0), true, new CaptionImage(new ResourceLocation("caption:textures/gui/dev/dev.png")), null);
@@ -114,113 +114,90 @@ public final class Caption {
 	
 	
 	
-	private static final Map<String, Caption.Element> current = Maps.newHashMap();
-	private static final Map<String, List<Caption.Element>> currentCaptions = Maps.newHashMap();
-	
-	private static final Map<String, Caption.Element> secondaryCurrent = Maps.newHashMap();
-	private static final Map<String, List<Caption.Element>> secondaryCurrentCaptions = Maps.newHashMap();
+	private static final Map<CaptionType, Map<String, Caption.Element>> currentCaptions = Maps.newHashMap();
+	private static final Map<CaptionType, Map<String, List<Caption.Element>>> alternativeCaptions = Maps.newHashMap();
 	
 	public static int getAllCaptionsSize(String name) {
 		int i = 0;
-		if(current.containsKey(name)) i++;
-		if(secondaryCurrent.containsKey(name)) i++;
-		if(currentCaptions.containsKey(name) && currentCaptions.get(name) !=null) i += currentCaptions.get(name).size();
-		if(secondaryCurrentCaptions.containsKey(name) && secondaryCurrentCaptions.get(name) !=null) i += secondaryCurrentCaptions.get(name).size();
+		for(CaptionType type : CaptionType.VALUES) {
+			if(currentCaptions.containsKey(type) && currentCaptions.get(type).containsKey(name)) {
+				i++;
+			}else if(alternativeCaptions.containsKey(type) && alternativeCaptions.get(type).containsKey(name)) {
+				i += alternativeCaptions.get(type).get(name).size();
+			}
+		}
 		return i;
 	}
 	
 	@SideOnly(Side.CLIENT)
-	public static Caption.Element getCurrentCaption() {return current.get(Minecraft.getMinecraft().player.getName());}
+	public static Caption.Element getCurrentCaption(CaptionType type) {return getCurrentCaption(type, Minecraft.getMinecraft().player.getName());}
 	@SideOnly(Side.CLIENT)
-	public static boolean hasCurrentCaption() {return current.containsKey(Minecraft.getMinecraft().player.getName());}
+	public static boolean hasCurrentCaption() {String name = Minecraft.getMinecraft().player.getName(); return hasCurrentCaption(CaptionType.Main, name) || hasCurrentCaption(CaptionType.Secondary, name);}
 	@SideOnly(Side.CLIENT)
-	public static Caption.Element getNextCaption() {return getNextCaption(Minecraft.getMinecraft().player.getName());}
+	public static boolean hasCurrentCaption(CaptionType type) {return hasCurrentCaption(type, Minecraft.getMinecraft().player.getName());}
 	@SideOnly(Side.CLIENT)
-	public static boolean hasNextCaption() {return hasNextCaption(Minecraft.getMinecraft().player.getName());}
+	public static Caption.Element getNextCaption(CaptionType type) {return getNextCaption(type, Minecraft.getMinecraft().player.getName());}
+	@SideOnly(Side.CLIENT)
+	public static boolean hasNextCaption(CaptionType type) {return hasNextCaption(type, Minecraft.getMinecraft().player.getName());}
 	
-	public static Caption.Element getCurrentCaption(String name) {return current.get(name);}
-	public static boolean hasCurrentCaption(String name) {return getCurrentCaption(name) != null;}
-	public static Caption.Element getNextCaption(String name) {
-		if(hasNextCaption(name)) {
-			return currentCaptions.get(name).get(0);
+	public static Caption.Element getCurrentCaption(CaptionType type, String name) {
+		if(!currentCaptions.containsKey(type)) return null;
+		return currentCaptions.get(type).get(name);
+	}
+	public static boolean hasCurrentCaption(CaptionType type, String name) {return getCurrentCaption(type, name) != null;}
+	public static Caption.Element getNextCaption(CaptionType type, String name) {
+		if(hasNextCaption(type, name)) {
+			return alternativeCaptions.get(type).get(name).get(0);
 		}
 		return null;
 	}
-	public static boolean hasNextCaption(String name) {
-		if(!currentCaptions.containsKey(name)) {
+	public static boolean hasNextCaption(CaptionType type, String name) {
+		if(!alternativeCaptions.containsKey(type)) {
 			return false;
 		}
-		return currentCaptions.get(name).size() > 0;
-	}
-	
-	@SideOnly(Side.CLIENT)
-	public static Caption.Element getCurrentSecondaryCaption() {return secondaryCurrent.get(Minecraft.getMinecraft().player.getName());}
-	@SideOnly(Side.CLIENT)
-	public static boolean hasCurrentSecondaryCaption() {return secondaryCurrent.containsKey(Minecraft.getMinecraft().player.getName());}
-	@SideOnly(Side.CLIENT)
-	public static Caption.Element getNextSecondaryCaption() {return getNextSecondaryCaption(Minecraft.getMinecraft().player.getName());}
-	@SideOnly(Side.CLIENT)
-	public static boolean hasNextSecondaryCaption() {return hasNextSecondaryCaption(Minecraft.getMinecraft().player.getName());}
-	
-	public static Caption.Element getCurrentSecondaryCaption(String name) {return secondaryCurrent.get(name);}
-	public static boolean hasCurrentSecondaryCaption(String name) {return getCurrentSecondaryCaption(name) != null;}
-	public static Caption.Element getNextSecondaryCaption(String name) {
-		if(hasNextSecondaryCaption(name)) {
-			return secondaryCurrentCaptions.get(name).get(0);
-		}
-		return null;
-	}
-	public static boolean hasNextSecondaryCaption(String name) {
-		if(!secondaryCurrentCaptions.containsKey(name)) {
-			return false;
-		}
-		return secondaryCurrentCaptions.get(name).size() > 0;
+		List<Element> e = alternativeCaptions.get(type).get(name);
+		return e!=null && e.size() > 0;
 	}
 	
 	private static void next(String playerName) {
-		if(hasNextCaption(playerName) && !hasCurrentCaption(playerName)) {
-			current.put(playerName, currentCaptions.get(playerName).remove(0));
-		}else if(hasNextCaption(playerName) && hasCurrentCaption(playerName) && getCurrentCaption(playerName).displayTime.isDone()) {
-			if(getCurrentCaption(playerName).displayName.equalsIgnoreCase(getNextCaption(playerName).displayName)) {
-				getCurrentCaption(playerName).changeTo(currentCaptions.get(playerName).remove(0));
-			}
-		}
-		
-		if(hasNextSecondaryCaption(playerName) && !hasCurrentSecondaryCaption(playerName)) {
-			secondaryCurrent.put(playerName, secondaryCurrentCaptions.get(playerName).remove(0));
-		}else if(hasNextSecondaryCaption(playerName) && hasCurrentSecondaryCaption(playerName) && getCurrentSecondaryCaption(playerName).displayTime.isDone()) {
-			if(getCurrentSecondaryCaption(playerName).displayName.equalsIgnoreCase(getNextSecondaryCaption(playerName).displayName)) {
-				getCurrentSecondaryCaption(playerName).changeTo(secondaryCurrentCaptions.get(playerName).remove(0));
+		for(Entry<CaptionType, Map<String, List<Element>>> currents : alternativeCaptions.entrySet()) {
+			if(currents.getValue()!=null && currents.getValue().containsKey(playerName)) {
+				CaptionType type = currents.getKey();
+				List<Element> elements = currents.getValue().get(playerName);
+				if(elements==null || elements.isEmpty()) continue;
+				
+				if(hasNextCaption(type, playerName) && !hasCurrentCaption(type, playerName)) {
+					if(!currentCaptions.containsKey(type)) currentCaptions.put(type, Maps.newHashMap());
+					currentCaptions.get(type).put(playerName, elements.remove(0));
+				}else if(hasNextCaption(type, playerName) && hasCurrentCaption(type, playerName) && getCurrentCaption(type, playerName).displayTime.isDone()) {
+					if(getCurrentCaption(type, playerName).displayName.equalsIgnoreCase(getNextCaption(type, playerName).displayName)) {
+						getCurrentCaption(type, playerName).changeTo(elements.remove(0));
+					}
+				}
 			}
 		}
 	}
 	
 	@SubscribeEvent
-	public static void onPlayerLevelServer(PlayerLoggedOutEvent event) {
-		current.remove(event.player.getName());
-		currentCaptions.remove(event.player.getName());
-		
-		secondaryCurrent.remove(event.player.getName());
-		secondaryCurrentCaptions.remove(event.player.getName());
+	public static void onPlayerLeaveServer(PlayerLoggedOutEvent event) {
+		for(Entry<CaptionType, Map<String, Element>> currents : Sets.newHashSet(currentCaptions.entrySet())) {
+			currentCaptions.get(currents.getKey()).remove(event.player.getName());
+		}
+		for(Entry<CaptionType, Map<String, List<Element>>> currents : Sets.newHashSet(alternativeCaptions.entrySet())) {
+			alternativeCaptions.get(currents.getKey()).remove(event.player.getName());
+		}
 	}
 	
 	@SubscribeEvent
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-		if(event.phase == Phase.END) {
-			String name = event.player.getName();
-			next(name);
-			
-			if(hasCurrentCaption(name)) {
-				Caption.Element current = getCurrentCaption(name);
+		String name = event.player.getName();
+		next(name);
+		
+		for(CaptionType type : CaptionType.VALUES) {
+			if(hasCurrentCaption(type, name)) {
+				Caption.Element current = getCurrentCaption(type, name);
 				if(current.show_post_delay.isDone()) {
-					Caption.current.remove(name);
-					return;
-				}
-			}
-			if(hasCurrentSecondaryCaption(name)) {
-				Caption.Element current = getCurrentSecondaryCaption(name);
-				if(current.show_post_delay.isDone()) {
-					Caption.secondaryCurrent.remove(name);
+					Caption.currentCaptions.get(type).remove(name);
 					return;
 				}
 			}
@@ -231,29 +208,22 @@ public final class Caption {
 	@SubscribeEvent
 	public static void onTick(TickEvent.PlayerTickEvent event) {
 		String name = event.player.getName();
-		if(hasCurrentCaption(name)) {
-			Caption.Element current = getCurrentCaption(name);
-			if(current.show_pre_delay.isDone() && current.sound != null && !current.sound.isPlayed()) {
-				current.sound.setPlayed();
-				if(current.sound.isFollowPlayer()) {
-					Minecraft.getMinecraft().getSoundHandler().playSound(new CapitonSndSound(event.player, current.sound, current.displayTime));
-				}else {
-					event.player.world.playSound(event.player, current.sound.getPos(), current.sound.getSound(), current.sound.getCategory(), current.sound.getVolume(), current.sound.getPitch());
-				}
-			}
-		}
-		if(hasCurrentSecondaryCaption(name)) {
-			Caption.Element current = getCurrentSecondaryCaption(name);
-			if(current.show_pre_delay.isDone() && current.sound != null && !current.sound.isPlayed()) {
-				current.sound.setPlayed();
-				if(current.sound.isFollowPlayer()) {
-					Minecraft.getMinecraft().getSoundHandler().playSound(new SecondarySndSound(event.player, current.sound, current.displayTime));
-				}else {
-					event.player.world.playSound(event.player, current.sound.getPos(), current.sound.getSound(), current.sound.getCategory(), current.sound.getVolume(), current.sound.getPitch());
+		for(CaptionType type : CaptionType.VALUES) {
+			if(hasCurrentCaption(type, name)) {
+				Caption.Element current = getCurrentCaption(type, name);
+				if(current.show_pre_delay.isDone() && current.sound != null && !current.sound.isPlayed()) {
+					current.sound.setPlayed();
+					if(current.sound.isFollowPlayer()) {
+						CapitonSndSound sound = type.isMainCaption() ? new CapitonSndSound(event.player, current.sound, current.displayTime) : new SecondarySndSound(event.player, current.sound, current.displayTime);
+						Minecraft.getMinecraft().getSoundHandler().playSound(sound);
+					}else {
+						event.player.world.playSound(event.player, current.sound.getPos(), current.sound.getSound(), current.sound.getCategory(), current.sound.getVolume(), current.sound.getPitch());
+					}
 				}
 			}
 		}
 	}
+	
 	private static class SecondarySndSound extends CapitonSndSound {
 		public SecondarySndSound(EntityPlayer player, CaptionSound sound, ICaptionTime playTime) {
 			super(player, sound, playTime);
@@ -265,69 +235,46 @@ public final class Caption {
 			while(true) {
 				try {Thread.sleep(50);}catch(InterruptedException e) { e.printStackTrace();}
 				if(CaptionMain.proxy.isClient() && Minecraft.getMinecraft().isGamePaused()) continue;
-				
-				if(!current.isEmpty()) {
-					for(Entry<String, Caption.Element> currents : Maps.newHashMap(current).entrySet()) {
-						if(currents.getValue() == null) {
-							current.remove(currents.getKey());
-						}
-					}
-				}
+				/*
+				// 会导致post阶段不绘制(It will cause no drawing in the post stage)
 				if(!currentCaptions.isEmpty()) {
-					for(Entry<String, List<Caption.Element>> currents : Maps.newHashMap(currentCaptions).entrySet()) {
-						if(currents.getValue() == null || currents.getValue().isEmpty()) {
-							currentCaptions.remove(currents.getKey());
+					for(Entry<CaptionType, Map<String, Element>> currents : Sets.newHashSet(currentCaptions.entrySet())) {
+						Map<String, Element> value = currents.getValue();
+						if(value==null || value.isEmpty()) currentCaptions.remove(currents.getKey());
+						for(Entry<String, Element> element : Sets.newHashSet(value.entrySet())) {
+							if(element.getValue()==null) currentCaptions.get(currents.getKey()).remove(element.getKey());
+						}
+					}
+				}
+				*/
+				
+				if(!alternativeCaptions.isEmpty()) {
+					for(Entry<CaptionType, Map<String, List<Element>>> currents : Sets.newHashSet(alternativeCaptions.entrySet())) {
+						Map<String, List<Element>> values = currents.getValue();
+						if(values==null || values.isEmpty()) alternativeCaptions.remove(currents.getKey());
+						for(Entry<String, List<Element>> elements : Sets.newHashSet(currents.getValue().entrySet())) {
+							List<Element> element = elements.getValue();
+							if(element==null || element.isEmpty()) alternativeCaptions.get(currents.getKey()).remove(elements.getKey());
 						}
 					}
 				}
 				
-				if(!current.isEmpty()) {
-					for(Entry<String, Caption.Element> currents : current.entrySet()) {
-						Caption.Element current = currents.getValue();
-						if(!current.delay.isDone()) {
-							current.delay.update();
-						}else if(current.show_pre_delay != null && !current.show_pre_delay.isDone()) {
-							current.show_pre_delay.update();
-						}else if(!current.displayTime.isDone()) {
-							current.displayTime.update();
-						}else {
-							current.show_post_delay.update();
-						}
-						if(!current.img.isDone()) {
-							current.img.update();
-						}
-					}
-				}
-				
-				if(!secondaryCurrent.isEmpty()) {
-					for(Entry<String, Caption.Element> currents : Maps.newHashMap(secondaryCurrent).entrySet()) {
-						if(currents.getValue() == null) {
-							secondaryCurrent.remove(currents.getKey());
-						}
-					}
-				}
-				if(!secondaryCurrentCaptions.isEmpty()) {
-					for(Entry<String, List<Caption.Element>> currents : Maps.newHashMap(secondaryCurrentCaptions).entrySet()) {
-						if(currents.getValue() == null || currents.getValue().isEmpty()) {
-							secondaryCurrentCaptions.remove(currents.getKey());
-						}
-					}
-				}
-				
-				if(!secondaryCurrent.isEmpty()) {
-					for(Entry<String, Caption.Element> currents : secondaryCurrent.entrySet()) {
-						Caption.Element current = currents.getValue();
-						if(!current.delay.isDone()) {
-							current.delay.update();
-						}else if(current.show_pre_delay != null && !current.show_pre_delay.isDone()) {
-							current.show_pre_delay.update();
-						}else if(!current.displayTime.isDone()) {
-							current.displayTime.update();
-						}else {
-							current.show_post_delay.update();
-						}
-						if(!current.img.isDone()) {
-							current.img.update();
+				if(!currentCaptions.isEmpty()) {
+					for(Entry<CaptionType, Map<String, Element>> allCurrents : currentCaptions.entrySet()) {
+						for(Entry<String, Caption.Element> currents : allCurrents.getValue().entrySet()) {
+							Caption.Element current = currents.getValue();
+							if(!current.delay.isDone()) {
+								current.delay.update();
+							}else if(current.show_pre_delay != null && !current.show_pre_delay.isDone()) {
+								current.show_pre_delay.update();
+							}else if(!current.displayTime.isDone()) {
+								current.displayTime.update();
+							}else {
+								current.show_post_delay.update();
+							}
+							if(!current.img.isDone()) {
+								current.img.update();
+							}
 						}
 					}
 				}
@@ -336,10 +283,8 @@ public final class Caption {
 	}
 	
 	public static void clearAllCaptions() {
+		alternativeCaptions.clear();
 		currentCaptions.clear();
-		current.clear();
-		secondaryCurrent.clear();
-		secondaryCurrentCaptions.clear();
 	}
 	
 	@SideOnly(Side.CLIENT)
@@ -348,15 +293,9 @@ public final class Caption {
 		if(Minecraft.getMinecraft().gameSettings.showDebugInfo) {
 			event.getLeft().add("");
 			event.getLeft().add("Caption: " + getAllCaptionsSize(Minecraft.getMinecraft().player.getName()));
-			if(hasCurrentCaption()) {
-				Caption.Element current = getCurrentCaption();
+			if(hasCurrentCaption(CaptionType.Main)) {
+				Caption.Element current = getCurrentCaption(CaptionType.Main);
 				event.getLeft().add("  Main: " + current);
-				event.getLeft().add("    Delay: " + current.delay.toStringTime(false));
-				event.getLeft().add("     Time: " + current.displayTime.toStringTime(false));
-			}
-			if(hasCurrentSecondaryCaption()) {
-				Caption.Element current = getCurrentSecondaryCaption();
-				event.getLeft().add("  Secondary: " + current);
 				event.getLeft().add("    Delay: " + current.delay.toStringTime(false));
 				event.getLeft().add("     Time: " + current.displayTime.toStringTime(false));
 			}
@@ -369,33 +308,22 @@ public final class Caption {
 		if(event.getType() == ElementType.CHAT && !Minecraft.getMinecraft().gameSettings.hideGUI) {
 			Minecraft mc = Minecraft.getMinecraft();
 			ScaledResolution sr = new ScaledResolution(mc);
-			if(hasCurrentCaption()) {
-				Caption.Element current = getCurrentCaption();
+			
+			for(CaptionType type : CaptionType.VALUES) {
+				if(hasCurrentCaption(type)) {
+					Caption.Element current = getCurrentCaption(type);
 
-				GlStateManager.pushMatrix();
-				GlStateManager.color(1,1,1,1);
-				if(current.delay.isDone() && !current.show_pre_delay.isDone()) {
-					current.preDraw(sr, mc, mc.ingameGUI, mc.fontRenderer);
-				}else if(current.show_pre_delay.isDone() && !current.displayTime.isDone()) {
-					current.draw(sr, mc, mc.ingameGUI, mc.fontRenderer);
-				}else if(current.displayTime.isDone() && !current.show_post_delay.isDone()) {
-					current.postDraw(sr, mc, mc.ingameGUI, mc.fontRenderer);
+					GlStateManager.pushMatrix();
+					GlStateManager.color(1,1,1,1);
+					if(current.delay.isDone() && !current.show_pre_delay.isDone()) {
+						current.preDraw(sr, mc, mc.ingameGUI, mc.fontRenderer);
+					}else if(current.show_pre_delay.isDone() && !current.displayTime.isDone()) {
+						current.draw(sr, mc, mc.ingameGUI, mc.fontRenderer);
+					}else if(current.displayTime.isDone() && !current.show_post_delay.isDone()) {
+						current.postDraw(sr, mc, mc.ingameGUI, mc.fontRenderer);
+					}
+					GlStateManager.popMatrix();
 				}
-				GlStateManager.popMatrix();
-			}
-			if(hasCurrentSecondaryCaption()) {
-				Caption.Element current = getCurrentSecondaryCaption();
-				
-				GlStateManager.pushMatrix();
-				GlStateManager.color(1,1,1,1);
-				if(current.delay.isDone() && !current.show_pre_delay.isDone()) {
-					current.preDraw(sr, mc, mc.ingameGUI, mc.fontRenderer);
-				}else if(current.show_pre_delay.isDone() && !current.displayTime.isDone()) {
-					current.draw(sr, mc, mc.ingameGUI, mc.fontRenderer);
-				}else if(current.displayTime.isDone() && !current.show_post_delay.isDone()) {
-					current.postDraw(sr, mc, mc.ingameGUI, mc.fontRenderer);
-				}
-				GlStateManager.popMatrix();
 			}
 		}
 	}
@@ -544,7 +472,7 @@ public final class Caption {
 			int height = 16 + (texts.size() * 10);
 			
 			int mainY = y;
-			if(this.type.isMainCaption() && hasCurrentSecondaryCaption() && getCurrentSecondaryCaption().delay.isDone()) {
+			if(this.type.isMainCaption() && hasCurrentCaption(CaptionType.Secondary) && getCurrentCaption(CaptionType.Secondary).delay.isDone()) {
 				mainY = y - height - 2;
 			}
 			
@@ -826,7 +754,7 @@ public final class Caption {
 				e.printStackTrace();
 			}
 		}
-
+		
 		@Override
 		public void toBytes(ByteBuf buf) {
 			new PacketBuffer(buf).writeCompoundTag(this.element.toNBT());
@@ -834,18 +762,10 @@ public final class Caption {
 		
 		public IMessage handler(MessageContext ctx) {
 			String name = ctx.side.isClient() ? Minecraft.getMinecraft().player.getName() : ctx.getServerHandler().player.getName();
-			if(this.element.type.isMainCaption()) {
-				if(!currentCaptions.containsKey(name)) {
-					currentCaptions.put(name, Lists.newArrayList());
-				}
-				currentCaptions.get(name).add(element);
-			}else {
-				if(!secondaryCurrentCaptions.containsKey(name)) {
-					secondaryCurrentCaptions.put(name, Lists.newArrayList());
-				}
-				secondaryCurrentCaptions.get(name).add(element);
-			}
+			if(!alternativeCaptions.containsKey(this.element.type)) alternativeCaptions.put(this.element.type, Maps.newHashMap());
+			if(!alternativeCaptions.get(this.element.type).containsKey(name)) alternativeCaptions.get(this.element.type).put(name, Lists.newArrayList());
 			
+			alternativeCaptions.get(this.element.type).get(name).add(this.element);
 			return null;
 		}
 	}
