@@ -20,7 +20,7 @@ public class CaptionMain {
 	public static final String MODID = "caption";
 	public static final String NAME = "Caption";
 	public static final String OWNER = "small_jiu";
-	public static final String VERSION = "1.0.0-a0-20220919000017";
+	public static final String VERSION = "1.0.1-a0-20221007021558";
 	public static final Logger log = LogManager.getLogger(NAME);
 	static CaptionNetworkHandler net;
 

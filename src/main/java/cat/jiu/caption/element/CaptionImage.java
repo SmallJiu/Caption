@@ -1,19 +1,24 @@
 package cat.jiu.caption.element;
 
 import java.util.List;
+import java.util.Map;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import cat.jiu.caption.jiucore.time.CaptionTime;
 import cat.jiu.caption.jiucore.time.ICaptionTime;
+
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagIntArray;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
 import net.minecraft.util.ResourceLocation;
+import java.util.Arrays;
 
 public class CaptionImage {
 	public static final CaptionImage DEFAULT_IMAGE = new CaptionImage(new ResourceLocation("caption:textures/gui/default_img.png"));
+	private static final Map<Integer, int[]> orderCache = Maps.newHashMap();
 	
 	protected final List<ResourceLocation> imgs;
 	/** image display order, like mcmeta {@code frames} */
@@ -26,11 +31,15 @@ public class CaptionImage {
 		this(null, null, 0, img);
 	}
 	protected static int[] genDefaultOrder(int size) {
-		int[] order = new int[size];
-		for(int i = 0; i < order.length; i++) {
-			order[i] = i;
+		if(!orderCache.containsKey(size) || orderCache.get(size) == null || orderCache.get(size).length != size) {
+			int[] order = new int[size];
+			for(int i = 0; i < order.length; i++) {
+				order[i] = i;
+			}
+			orderCache.put(size, order);
+			return order;
 		}
-		return order;
+		return orderCache.get(size);
 	}
 	
 	public CaptionImage(long delayTick, ResourceLocation... imgs) {
@@ -64,7 +73,7 @@ public class CaptionImage {
 	}
 	
 	protected int displayIndex = 0;
-	public int[] getOrder() {return order;}
+	public int[] getOrder() {return Arrays.copyOf(order, order.length);}
 	public ICaptionTime getDelay() {return delay;}
 	public ResourceLocation getImage() {
 		if(this.imgs != null && !this.imgs.isEmpty()) {
@@ -87,7 +96,7 @@ public class CaptionImage {
 	public NBTTagCompound toNBT() {
 		NBTTagCompound nbt = new NBTTagCompound();
 		
-		if(this.imgs != null && !this.imgs.isEmpty()) {
+		if(this.hasMoreFrame()) {
 			NBTTagList imgsTag = new NBTTagList();
 			for(int i = 0; i < this.imgs.size(); i++) {
 				imgsTag.appendTag(new NBTTagString(this.imgs.get(i).toString()));
@@ -113,7 +122,7 @@ public class CaptionImage {
 			
 			return new CaptionImage(imgs, order, delay);
 		}else {
-			if(nbt.getString("img").equalsIgnoreCase(DEFAULT_IMAGE.img.toString())) {
+			if(!nbt.hasKey("img") || nbt.getString("img").equalsIgnoreCase(DEFAULT_IMAGE.img.toString())) {
 				return DEFAULT_IMAGE;
 			}
 			return new CaptionImage(new ResourceLocation(nbt.getString("img")));
