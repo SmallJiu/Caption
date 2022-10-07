@@ -37,10 +37,10 @@ public final class Utils {
 	 * @param textArg if text is translate text, this is the args
 	 * @param displayTime the caption time of display
 	 * @param displaySide the caption display side
-	 * @param displayDelay the caption display delay
+	 * @param displayDelay the caption display delayTick
 	 * @param needBg set to true if you need black background
 	 * @param displayImgs the speaker image, can be null, the size must be 100x60
-	 * @param displayImgDelayTicks the image delay, like mcmeta {@code frametime}
+	 * @param displayImgDelayTicks the image delayTick, like mcmeta {@code frametime}
 	 * @param sound the speak sound, can be null
 	 * @see cat.jiu.caption.Caption.Element
 	 */

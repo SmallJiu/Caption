@@ -22,8 +22,8 @@ import cat.jiu.caption.jiucore.time.ICaptionTime;
 import cat.jiu.caption.type.CaptionType;
 import cat.jiu.caption.type.DisplaySideType;
 import cat.jiu.caption.type.DrawState;
-
 import cat.jiu.caption.util.CapitonSndSound;
+import cat.jiu.core.Logger;
 
 import io.netty.buffer.ByteBuf;
 
@@ -47,6 +47,7 @@ import net.minecraftforge.fml.common.Optional;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedOutEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
@@ -57,6 +58,7 @@ public final class Caption {
 	private static final ICaptionTime NO_DELAY = new CaptionTime();
 	public static ICaptionTime noDelay() {return NO_DELAY.copy();}
 	public static final Utils utils = new Utils();
+	static final Logger log = CaptionMain.log;
 	
 	static void add(EntityPlayer player, Caption.Element element) {
 		if(player instanceof EntityPlayerMP) {
@@ -79,17 +81,17 @@ public final class Caption {
 	
 	// Test
 	private static final SoundEvent DEV_SOT_SeaLord_Last_Calipso = new SoundEvent(new ResourceLocation("caption:dev_sound")).setRegistryName(new ResourceLocation("caption:dev_sound"));
-	private static boolean test() {return false;}
+	private static boolean test() {return true;}
 	@SubscribeEvent
 	public static void onPlayerBreakBlock(BlockEvent.BreakEvent event) {
 		if(event.getState().getBlock() == Blocks.DIAMOND_BLOCK) {
 			if(test()) {
 				List<ResourceLocation> imgs = Lists.newArrayList();
-				imgs.add(new ResourceLocation("caption:textures/gui/dev/bat.png"));
+				//imgs.add(new ResourceLocation("caption:textures/gui/dev/bat.png"));
 				for(int i = 0; i < 13; i++) {
 					imgs.add(new ResourceLocation("caption:textures/gui/dev/dev-gif/dev-gif_" + i + ".png"));
 				}
-				Caption.add(event.getPlayer(), CaptionType.Main, new CaptionText(TextFormatting.RED + "森林蝙蝠"), new CaptionText("不是很喜欢加速火把嘛，把火把插进你PY让你好好加速"), new CaptionTime(0, 5, 0), DisplaySideType.LEFT, new CaptionTime(1, 0), true, new CaptionImage(imgs, 1), null);
+				Caption.add(event.getPlayer(), CaptionType.Main, new CaptionText(TextFormatting.RED + "森林蝙蝠"), new CaptionText("不是很喜欢加速火把嘛，把火把插进你PY让你好好加速"), new CaptionTime(0, 5, 0), DisplaySideType.LEFT, new CaptionTime(1, 0), true, new CaptionImage(imgs, true, 4), null);
 			}else {
 				Caption.add(event.getPlayer(), CaptionType.Main, new CaptionText("caption.dev.name", ""), new CaptionText("caption.dev.msg.0"), new CaptionTime(0, 4, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), true, new CaptionImage(new ResourceLocation("caption:textures/gui/dev/dev.png")), new CaptionSound(DEV_SOT_SeaLord_Last_Calipso, SoundCategory.PLAYERS, 1F, 1F));
 				Caption.add(event.getPlayer(), CaptionType.Main, new CaptionText("caption.dev.name", ""), new CaptionText("caption.dev.msg.1"), new CaptionTime(0, 8, 0), DisplaySideType.DOWN, new CaptionTime(1, 0), true, new CaptionImage(new ResourceLocation("caption:textures/gui/dev/dev.png")), null);
@@ -108,6 +110,7 @@ public final class Caption {
 	
 	private static final Map<CaptionType, Map<String, Caption.Element>> currentCaptions = Maps.newHashMap();
 	private static final Map<CaptionType, Map<String, List<Caption.Element>>> alternativeCaptions = Maps.newHashMap();
+	private static final Map<CaptionType, Map<String, Caption.Element>> lastCurrentCaptions = Maps.newHashMap();
 	
 	public static int getAllCaptionsSize(String name) {
 		int i = 0;
@@ -151,6 +154,12 @@ public final class Caption {
 		List<Element> e = alternativeCaptions.get(type).get(name);
 		return e!=null && !e.isEmpty();
 	}
+	public static Caption.Element getLastCaption(CaptionType type, String name) {
+		if(lastCurrentCaptions.containsKey(type)) {
+			return lastCurrentCaptions.get(type).get(name);
+		}
+		return null;
+	}
 	
 	private static void next(String playerName) {
 		for(Entry<CaptionType, Map<String, List<Element>>> currents : alternativeCaptions.entrySet()) {
@@ -161,6 +170,7 @@ public final class Caption {
 				if(!hasCurrentCaption(type, playerName)) {
 					if(!currentCaptions.containsKey(type)) currentCaptions.put(type, Maps.newHashMap());
 					currentCaptions.get(type).put(playerName, elements.remove(0));
+					getCurrentCaption(type, playerName).img.startTiming();
 				}else if(hasCurrentCaption(type, playerName) && getCurrentCaption(type, playerName).displayTime.isDone()) {
 					if(getCurrentCaption(type, playerName).displayName.getText().equalsIgnoreCase(getNextCaption(type, playerName).displayName.getText())) {
 						getCurrentCaption(type, playerName).changeTo(elements.remove(0));
@@ -182,15 +192,20 @@ public final class Caption {
 	
 	@SubscribeEvent
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-		String name = event.player.getName();
-		next(name);
-		
-		for(CaptionType type : CaptionType.VALUES) {
-			if(hasCurrentCaption(type, name)) {
-				Caption.Element current = getCurrentCaption(type, name);
-				if(current.show_post_delay.isDone()) {
-					Caption.currentCaptions.get(type).remove(name);
-					return;
+		if(event.phase == Phase.START) {
+			String name = event.player.getName();
+			next(name);
+			
+			for(CaptionType type : CaptionType.VALUES) {
+				if(hasCurrentCaption(type, name)) {
+					Caption.Element current = getCurrentCaption(type, name);
+					if(current.show_post_delay.isDone()) {
+						current.img.setDonePlaying(true);
+						if(!lastCurrentCaptions.containsKey(type)) lastCurrentCaptions.put(type, Maps.newHashMap());
+						lastCurrentCaptions.get(type).put(name, current);
+						Caption.currentCaptions.get(type).remove(name);
+						return;
+					}
 				}
 			}
 		}
@@ -199,17 +214,19 @@ public final class Caption {
 	@SideOnly(Side.CLIENT)
 	@SubscribeEvent
 	public static void onClientPlayerTick(TickEvent.PlayerTickEvent event) {
-		String name = event.player.getName();
-		for(CaptionType type : CaptionType.VALUES) {
-			if(hasCurrentCaption(type, name)) {
-				Caption.Element current = getCurrentCaption(type, name);
-				if(current.show_pre_delay.isDone() && current.sound != null && !current.sound.isPlayed()) {
-					current.sound.setPlayed();
-					if(current.sound.isFollowPlayer()) {
-						CapitonSndSound sound = type.isMainCaption() ? new CapitonSndSound(event.player, current.sound, current.displayTime) : new SecondarySndSound(event.player, current.sound, current.displayTime);
-						Minecraft.getMinecraft().getSoundHandler().playSound(sound);
-					}else {
-						event.player.world.playSound(event.player, current.sound.getPos(), current.sound.getSound(), current.sound.getCategory(), current.sound.getVolume(), current.sound.getPitch());
+		if(event.phase == Phase.START) {
+			String name = event.player.getName();
+			for(CaptionType type : CaptionType.VALUES) {
+				if(hasCurrentCaption(type, name)) {
+					Caption.Element current = getCurrentCaption(type, name);
+					if(current.show_pre_delay.isDone() && current.sound != null && !current.sound.isPlayed()) {
+						current.sound.setPlayed();
+						if(current.sound.isFollowPlayer()) {
+							CapitonSndSound sound = type.isMainCaption() ? new CapitonSndSound(event.player, current.sound, current.displayTime) : new SecondarySndSound(event.player, current.sound, current.displayTime);
+							Minecraft.getMinecraft().getSoundHandler().playSound(sound);
+						}else {
+							event.player.world.playSound(event.player, current.sound.getPos(), current.sound.getSound(), current.sound.getCategory(), current.sound.getVolume(), current.sound.getPitch());
+						}
 					}
 				}
 			}
@@ -300,18 +317,24 @@ public final class Caption {
 
 					GlStateManager.pushMatrix();
 					GlStateManager.color(1,1,1,1);
-					if(current.delay.isDone() && !current.show_pre_delay.isDone()) {
-						if(MinecraftForge.EVENT_BUS.post(new CaptionDrawEvent.Pre(current, DrawState.PRE))) continue;
-						current.preDraw(sr, mc, mc.ingameGUI, mc.fontRenderer);
-						MinecraftForge.EVENT_BUS.post(new CaptionDrawEvent.Post(current, DrawState.PRE));
-					}else if(current.show_pre_delay.isDone() && !current.displayTime.isDone()) {
-						if(MinecraftForge.EVENT_BUS.post(new CaptionDrawEvent.Pre(current, DrawState.DRAW))) continue;
-						current.draw(sr, mc, mc.ingameGUI, mc.fontRenderer);
-						MinecraftForge.EVENT_BUS.post(new CaptionDrawEvent.Post(current, DrawState.DRAW));
-					}else if(current.displayTime.isDone() && !current.show_post_delay.isDone()) {
-						if(MinecraftForge.EVENT_BUS.post(new CaptionDrawEvent.Pre(current, DrawState.POST))) continue;
-						current.postDraw(sr, mc, mc.ingameGUI, mc.fontRenderer);
-						MinecraftForge.EVENT_BUS.post(new CaptionDrawEvent.Post(current, DrawState.POST));
+					
+					try {
+						if(current.delay.isDone() && !current.show_pre_delay.isDone()) {
+							if(MinecraftForge.EVENT_BUS.post(new CaptionDrawEvent.Pre(mc.ingameGUI, current, DrawState.PRE))) continue;
+							current.preDraw(sr, mc, mc.ingameGUI, mc.fontRenderer);
+							MinecraftForge.EVENT_BUS.post(new CaptionDrawEvent.Post(mc.ingameGUI, current, DrawState.PRE));
+						}else if(current.show_pre_delay.isDone() && !current.displayTime.isDone()) {
+							if(MinecraftForge.EVENT_BUS.post(new CaptionDrawEvent.Pre(mc.ingameGUI, current, DrawState.DRAW))) continue;
+							current.draw(sr, mc, mc.ingameGUI, mc.fontRenderer);
+							MinecraftForge.EVENT_BUS.post(new CaptionDrawEvent.Post(mc.ingameGUI, current, DrawState.DRAW));
+						}else if(current.displayTime.isDone() && !current.show_post_delay.isDone()) {
+							if(MinecraftForge.EVENT_BUS.post(new CaptionDrawEvent.Pre(mc.ingameGUI, current, DrawState.POST))) continue;
+							current.postDraw(sr, mc, mc.ingameGUI, mc.fontRenderer);
+							MinecraftForge.EVENT_BUS.post(new CaptionDrawEvent.Post(mc.ingameGUI, current, DrawState.POST));
+						}
+					}catch(Throwable e) {
+						log.error(e + ": " + e.getLocalizedMessage());
+						e.printStackTrace();
 					}
 					GlStateManager.popMatrix();
 				}
@@ -335,7 +358,7 @@ public final class Caption {
 		protected CaptionText displayName;
 		/** speaker speak text, can be translate text */
 		protected CaptionText displayText;
-		/** caption display delay */
+		/** caption display delayTick */
 		protected final ICaptionTime delay;
 		/** show pre transition time */
 		protected final ICaptionTime show_pre_delay;
@@ -368,10 +391,8 @@ public final class Caption {
 		
 		@SideOnly(Side.CLIENT)
 		public final void draw(ScaledResolution sr, Minecraft mc, GuiIngame gui, FontRenderer fr) {
-			int width = sr.getScaledWidth();
-	        int height = sr.getScaledHeight();
-	        int centerX = width / 2 -1;
-	        int centerY = height / 2 - 4;
+			int centerX = sr.getScaledWidth() / 2 -1;
+	        int centerY = sr.getScaledHeight() / 2 - 4;
 	        
 	        switch(this.side) {
 				case DOWN:
@@ -392,10 +413,8 @@ public final class Caption {
 		
 		@SideOnly(Side.CLIENT)
 		public final void preDraw(ScaledResolution sr, Minecraft mc, GuiIngame gui, FontRenderer fr) {
-			int width = sr.getScaledWidth();
-	        int height = sr.getScaledHeight();
-	        int centerX = width / 2 -1;
-	        int centerY = height / 2 - 4;
+	        int centerX = sr.getScaledWidth() / 2 -1;
+	        int centerY = sr.getScaledHeight() / 2 - 4;
 	        
 	        switch(this.side) {
 				case DOWN:
@@ -416,10 +435,8 @@ public final class Caption {
 		
 		@SideOnly(Side.CLIENT)
 		public final void postDraw(ScaledResolution sr, Minecraft mc, GuiIngame gui, FontRenderer fr) {
-			int width = sr.getScaledWidth();
-	        int height = sr.getScaledHeight();
-	        int centerX = width / 2 -1;
-	        int centerY = height / 2 - 4;
+			int centerX = sr.getScaledWidth() / 2 -1;
+	        int centerY = sr.getScaledHeight() / 2 - 4;
 	        
 	        switch(this.side) {
 				case DOWN:
@@ -535,7 +552,7 @@ public final class Caption {
 						Gui.drawModalRectWithCustomSizedTexture(0, textureY + 59, 0, 0, 95, height, 50, 35);
 					}
 					
-					if(this.img.hasMoreFrame() && this.img.isDone()) {
+					if(this.img.hasMoreFrame() && this.img.isDoneDelay()) {
 						this.img.resetDelay();
 					}
 					mc.getTextureManager().bindTexture(this.img.getImage());
@@ -596,7 +613,7 @@ public final class Caption {
 						mc.getTextureManager().bindTexture(side_down_texture);
 						Gui.drawModalRectWithCustomSizedTexture(sr.getScaledWidth() - 95, textureY + 59, 0, 0, 95, height, 50, 35);
 					}
-					if(this.img.hasMoreFrame() && this.img.isDone()) {
+					if(this.img.hasMoreFrame() && this.img.isDoneDelay()) {
 						this.img.resetDelay();
 					}
 					mc.getTextureManager().bindTexture(this.img.getImage());
@@ -672,7 +689,7 @@ public final class Caption {
 			}else {
 				this.show_post_delay.update();
 			}
-			if(this.img!=null && !this.img.isDone()) {
+			if(this.img!=null && !this.img.isUseMillisToTiming() && !this.img.isDoneDelay()) {
 				this.img.update();
 			}
 		}
@@ -699,7 +716,7 @@ public final class Caption {
 			nbt.setTag("text", this.displayText.writeToNBT());
 			
 			nbt.setTag("time", this.displayTime.writeToNBT(new NBTTagCompound(), false));
-			nbt.setTag("delay", this.delay.writeToNBT(new NBTTagCompound(), false));
+			nbt.setTag("delayTick", this.delay.writeToNBT(new NBTTagCompound(), false));
 			nbt.setInteger("side", this.side.getID());
 			nbt.setBoolean("needBG", this.needBg);
 			
@@ -714,7 +731,7 @@ public final class Caption {
 			CaptionText name = CaptionText.get(nbt.getCompoundTag("name"));
 			CaptionText text = CaptionText.get(nbt.getCompoundTag("text"));
 			ICaptionTime talkTime = ICaptionTime.from(nbt.getCompoundTag("time"));
-			ICaptionTime delay = ICaptionTime.from(nbt.getCompoundTag("delay"));
+			ICaptionTime delay = ICaptionTime.from(nbt.getCompoundTag("delayTick"));
 			
 			DisplaySideType side = DisplaySideType.getType(nbt.getInteger("side"));
 			

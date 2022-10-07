@@ -4,7 +4,6 @@ import cat.jiu.caption.Caption;
 import cat.jiu.caption.Caption.Element;
 import cat.jiu.caption.type.DrawState;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiIngame;
 
 import net.minecraftforge.fml.common.eventhandler.Cancelable;
@@ -18,21 +17,21 @@ public class CaptionDrawEvent extends Event {
 	public final DrawState state;
 	public final GuiIngame gui;
 	
-	protected CaptionDrawEvent(Caption.Element element, DrawState state) {
+	protected CaptionDrawEvent(GuiIngame gui, Caption.Element element, DrawState state) {
 		this.element = element;
 		this.state = state;
-		this.gui = Minecraft.getMinecraft().ingameGUI;
+		this.gui = gui;
 	}
 
 	@Cancelable
 	public static class Pre extends CaptionDrawEvent {
-		public Pre(Element element, DrawState state) {
-			super(element, state);
+		public Pre(GuiIngame gui, Element element, DrawState state) {
+			super(gui, element, state);
 		}
 	}
 	public static class Post extends CaptionDrawEvent {
-		public Post(Element element, DrawState state) {
-			super(element, state);
+		public Post(GuiIngame gui, Element element, DrawState state) {
+			super(gui, element, state);
 		}
 	}
 }

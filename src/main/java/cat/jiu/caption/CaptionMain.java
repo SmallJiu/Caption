@@ -1,10 +1,7 @@
 package cat.jiu.caption;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import cat.jiu.caption.proxy.ServerProxy;
-
+import cat.jiu.core.Logger;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -20,8 +17,8 @@ public class CaptionMain {
 	public static final String MODID = "caption";
 	public static final String NAME = "Caption";
 	public static final String OWNER = "small_jiu";
-	public static final String VERSION = "1.0.1-a0-20221007021558";
-	public static final Logger log = LogManager.getLogger(NAME);
+	public static final String VERSION = "1.0.1-a1-20221008015428";
+	public static final Logger log = new Logger("Caption");
 	static CaptionNetworkHandler net;
 
 	@SidedProxy(
