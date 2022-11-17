@@ -22,12 +22,12 @@ public class CapitonSndSound extends MovingSound {
 
 	@Override
 	public void update() {
-		if(!this.playTime.isDone()) {
-			this.xPosF = (float)this.player.posX;
-            this.yPosF = (float)this.player.posY;
-            this.zPosF = (float)this.player.posZ;
-		}else {
-			this.donePlaying = true;
-		}
+		this.xPosF = (float)this.player.posX;
+        this.yPosF = (float)this.player.posY;
+        this.zPosF = (float)this.player.posZ;
+	}
+	@Override
+	public boolean isDonePlaying() {
+		return this.playTime.isDone();
 	}
 }

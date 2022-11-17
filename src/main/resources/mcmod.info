@@ -8,7 +8,7 @@
 	 	"url": "https://github.com/SmallJiu/Caption",
 	 	"updateUrl": "",
 	 	"authorList": ["small_jiu"],
-	 	"logoFile": "assets/email/mod_logo.png",
+	 	"logoFile": "assets/caption/mod_logo.png",
 	 	"screenshots": [],
 	 	"dependencies": []
 	}

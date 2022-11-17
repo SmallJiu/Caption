@@ -18,6 +18,7 @@ class CaptionNetworkHandler {
 		this.channel = NetworkRegistry.INSTANCE.newSimpleChannel(CaptionMain.MODID);
 		this.channel.registerMessage(Caption.MsgCaption::handler, Caption.MsgCaption.class, nextID(), Side.CLIENT);
 		this.channel.registerMessage(Caption.MsgCaption::handler, Caption.MsgCaption.class, nextID(), Side.SERVER);
+		this.channel.registerMessage(DialogAPI.MsgDialog::handler, DialogAPI.MsgDialog.class, nextID(), Side.CLIENT);
 	}
 	
 	/** server to client */

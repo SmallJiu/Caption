@@ -10,7 +10,7 @@ buildscript {
 }
 apply plugin: 'net.minecraftforge.gradle.forge'
 
-version = "1.0.0-demo-"
+version = "1.0.1-a1"
 group = "cat.jiu.caption"
 archivesBaseName = "Caption"
 
@@ -26,7 +26,7 @@ minecraft {
 }
 
 def commonManifest = {
-    attributes('FMLAT': 'dialogue_at.cfg')
+    attributes('FMLAT': 'caption_at.cfg')
 }
 
 jar {

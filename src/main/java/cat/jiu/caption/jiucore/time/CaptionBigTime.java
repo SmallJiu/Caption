@@ -345,7 +345,7 @@ public class CaptionBigTime implements ICaptionTime {
 	
 	private static BigInteger time(JsonObject obj, String... keys) {
 		JsonPrimitive pri = CoreUtils.getElement(JsonPrimitive.class, obj, keys);
-		if(pri != null && pri.isString()) {
+		if(pri != null && (pri.isString() || pri.isNumber())) {
 			return new BigInteger(pri.getAsString());
 		}
 		return BigInteger.ZERO;
