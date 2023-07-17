@@ -1,4 +1,6 @@
-package cat.jiu.caption;
+package cat.jiu.caption.util;
+
+import cat.jiu.caption.ModMain;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 
@@ -7,7 +9,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
 
-class CaptionNetworkHandler {
+public class CaptionNetworkHandler {
 	private SimpleNetworkWrapper channel;
 	private static int ID = 0;
 	private static int nextID() {
@@ -15,9 +17,9 @@ class CaptionNetworkHandler {
 	}
 	
 	public CaptionNetworkHandler() {
-		this.channel = NetworkRegistry.INSTANCE.newSimpleChannel(CaptionMain.MODID);
-		this.channel.registerMessage(Caption.MsgCaption::handler, Caption.MsgCaption.class, nextID(), Side.CLIENT);
-		this.channel.registerMessage(Caption.MsgCaption::handler, Caption.MsgCaption.class, nextID(), Side.SERVER);
+		this.channel = NetworkRegistry.INSTANCE.newSimpleChannel(ModMain.MODID);
+		this.channel.registerMessage(CaptionImp.MsgCaption::handler, CaptionImp.MsgCaption.class, nextID(), Side.CLIENT);
+		this.channel.registerMessage(CaptionImp.MsgCaption::handler, CaptionImp.MsgCaption.class, nextID(), Side.SERVER);
 	}
 	
 	/** server to client */

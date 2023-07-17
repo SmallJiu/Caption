@@ -5,6 +5,7 @@ import java.util.Random;
 public enum DisplaySideType {
 	DOWN(0), LEFT(1), RIGHT(2), RAND_SIDE(3), RAND(4);
 	
+	public static final DisplaySideType[] TYPES = {LEFT, RIGHT, DOWN};
 	public static final DisplaySideType[] SIDE = {LEFT, RIGHT};
 	public static final DisplaySideType[] VALUES;
 	

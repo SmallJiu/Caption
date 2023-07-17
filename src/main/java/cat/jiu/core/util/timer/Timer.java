@@ -1,12 +1,13 @@
-package cat.jiu.caption.jiucore.time;
+package cat.jiu.core.util.timer;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
-import cat.jiu.caption.jiucore.CoreUtils;
+import cat.jiu.core.api.ITimer;
 
-public class CaptionTime implements ICaptionTime {
+public class Timer implements ITimer {
 	protected long day;
 	protected long hour;
 	protected long minute;
@@ -15,134 +16,131 @@ public class CaptionTime implements ICaptionTime {
 	protected long ticks;
 	protected long allTicks;
 	
-	public CaptionTime() {
+	public Timer() {
 		this(0);
 	}
-	public CaptionTime(long sec, long tick) {
+	public Timer(long sec, long tick) {
 		this(0, sec, tick);
 	}
-	public CaptionTime(long min, long sec, long tick) {
+	public Timer(long min, long sec, long tick) {
 		this(0, 0, min, sec, tick);
 	}
-	public CaptionTime(long hour, long min, long sec, long tick) {
+	public Timer(long hour, long min, long sec, long tick) {
 		this(0, hour, min, sec, tick);
 	}
-	public CaptionTime(long day, long hour, long min, long sec, long tick) {
+	public Timer(long day, long hour, long min, long sec, long tick) {
 		this(parseTick(day, hour, min, sec, tick));
 	}
-	public CaptionTime(long ticks) {
+	public Timer(long ticks) {
 		this.setTicks(ticks);
 		this.setAllTicks(ticks);
 	}
 	
-	public CaptionTime subtractDay(long day) {
+	public Timer subtractDay(long day) {
 		this.day -= day;
 		this.replace();
 		return this;
 	}
-	public CaptionTime subtractHour(long hour) {
+	public Timer subtractHour(long hour) {
 		this.hour -= hour;
 		this.replace();
 		return this;
 	}
-	public CaptionTime subtractMinute(long minute) {
+	public Timer subtractMinute(long minute) {
 		this.minute -= minute;
 		this.replace();
 		return this;
 	}
-	public CaptionTime subtractSecond(long second) {
+	public Timer subtractSecond(long second) {
 		this.second -= second;
 		this.replace();
 		return this;
 	}
-	public CaptionTime subtractTick(long tick) {
+	public Timer subtractTick(long tick) {
 		this.tick -= tick;
 		this.replace();
 		return this;
 	}
 	
-	public CaptionTime addDay(long day) {
+	public Timer addDay(long day) {
 		this.day += day;
 		this.replace();
 		return this;
 	}
-	public CaptionTime addHour(long hour) {
+	public Timer addHour(long hour) {
 		this.hour += hour;
 		this.replace();
 		return this;
 	}
-	public CaptionTime addMinute(long minute) {
+	public Timer addMinute(long minute) {
 		this.minute += minute;
 		this.replace();
 		return this;
 	}
-	public CaptionTime addSecond(long second) {
+	public Timer addSecond(long second) {
 		this.second += second;
 		this.replace();
 		return this;
 	}
-	public CaptionTime addTick(long tick) {
+	public Timer addTick(long tick) {
 		this.tick += tick;
 		this.replace();
 		return this;
 	}
 	
-	public CaptionTime setDay(long day) {
+	public Timer setDay(long day) {
 		this.day = day;
 		this.replace();
 		return this;
 	}
-	public CaptionTime setHour(long hour) {
+	public Timer setHour(long hour) {
 		this.hour = hour;
 		this.replace();
 		return this;
 	}
-	public CaptionTime setMinute(long minute) {
+	public Timer setMinute(long minute) {
 		this.minute = minute;
 		this.replace();
 		return this;
 	}
-	public CaptionTime setSecond(long second) {
+	public Timer setSecond(long second) {
 		this.second = second;
 		this.replace();
 		return this;
 	}
-	public CaptionTime setTick(long tick) {
+	public Timer setTick(long tick) {
 		this.tick = tick;
 		this.replace();
 		return this;
 	}
-	public CaptionTime setAllTicks(long allTicks) {
+	
+	public Timer setAllTicks(long allTicks) {
 		this.allTicks = allTicks;
 		return this;
 	}
 	
 	@Override
-	public CaptionTime add(ICaptionTime time) {
+	public Timer add(ITimer time) {
 		long ticks = 0;
-		if(time instanceof CaptionBigTime) {
-			ticks = this.ticks + ((CaptionBigTime)time).ticks.longValue();
-		}else {
-			ticks = this.ticks + time.getTicks();
-		}
+		
+		ticks = this.ticks + time.getTicks();
+		
 		this.format(ticks);
 		return this;
 	}
 	
 	@Override
-	public CaptionTime subtract(ICaptionTime time) {
+	public Timer subtract(ITimer time) {
 		long ticks = 0;
-		if(time instanceof CaptionBigTime) {
-			ticks = this.ticks - ((CaptionBigTime)time).ticks.longValue();
-		}else {
-			ticks = this.ticks - time.getTicks();
-		}
+		
+		ticks = this.ticks - time.getTicks();
+		
 		this.format(ticks);
 		return this;
 	}
 	
 	@Override
-	public CaptionTime reset() {
+	public Timer reset() {
 		this.format(this.allTicks);
 		return this;
 	}
@@ -201,22 +199,26 @@ public class CaptionTime implements ICaptionTime {
 	public int hashCode() {return (int) this.hash();}
 	public boolean equals(Object obj) {return equalsTime(obj);}
 	public String toString() {return toStringTime(false);}
-	public CaptionTime clone() {return this.copy();}
+	public Timer clone() {return this.copy();}
 
-	public CaptionTime copy() {return new CaptionTime(ticks);}
+	public Timer copy() {
+		Timer time = new Timer(ticks);
+		time.setAllTicks(allTicks);
+		return time;
+	}
 	
 // static
 	
-	public static CaptionTime getTime(JsonElement e) {
+	public static Timer getTime(JsonElement e) {
 		if(e.isJsonObject()) {
 			return getTime(e.getAsJsonObject());
 		}else if(e.isJsonPrimitive()) {
 			return getTime(e.getAsJsonPrimitive());
 		}
-		return new CaptionTime();
+		return new Timer();
 	}
 	
-	public static CaptionTime getTime(JsonPrimitive json) {
+	public static Timer getTime(JsonPrimitive json) {
 		long day = 0;
 		long hour = 0;
 		long min = 0;
@@ -228,17 +230,17 @@ public class CaptionTime implements ICaptionTime {
 			tick = json.getAsLong();
 		}
 		
-		return new CaptionTime(day, hour, min, sec, tick);
+		return new Timer(day, hour, min, sec, tick);
 	}
 	
-	public static CaptionTime getTime(String time) {
+	public static Timer getTime(String time) {
 		long day = 0;
 		long hour = 0;
 		long min = 0;
 		long sec = 0;
 		long tick = 0;
 		if(time.contains(":")) {
-			String[] times = time.split(":");
+			String[] times = time.split("\\:");
 			switch(times.length) {
 				case 5: day = Long.parseLong(times[4]);
 				case 4: hour = Long.parseLong(times[3]);
@@ -251,25 +253,74 @@ public class CaptionTime implements ICaptionTime {
 		}else {
 			tick = Long.parseLong(time);
 		}
-		return new CaptionTime(day, hour, min, sec, tick);
+		return new Timer(day, hour, min, sec, tick);
 	}
 	
-	public static CaptionTime getTime(JsonObject obj) {
-		return new CaptionTime(
-						time(obj, "d", "ds", "day",   "days"),
-						time(obj, "h", "hs", "hour",   "hours"),
-						time(obj, "m", "ms", "minute", "minutes"),
-						time(obj, "s", "ss", "sec",    "secs", "second", "seconds"),
+	public static Timer getTime(JsonObject obj) {
+		return new Timer(
+						time(obj, "d", "ds", "format_day",   "days"),
+						time(obj, "h", "hs", "format_hour",   "hours"),
+						time(obj, "m", "ms", "format_minute", "minutes"),
+						time(obj, "s", "ss", "sec",    "secs", "format_second", "seconds"),
 						time(obj, "t", "ts", "tick")
 					);
 	}
 	
 	private static long time(JsonObject obj, String... keys) {
-		JsonPrimitive pri = CoreUtils.getElement(JsonPrimitive.class, obj, keys);
+		JsonPrimitive pri = getElement(JsonPrimitive.class, obj, keys);
 		if(pri != null && pri.isNumber()) {
 			return pri.getAsLong();
 		}
 		return 0;
+	}
+	
+	@SuppressWarnings({"unchecked"})
+	public static <T extends JsonElement> T getElement(Class<T> type, JsonObject obj, String... keys) {
+		JsonType jsonType = JsonType.getType(type);
+		T result = null;
+		
+		lable: for(String key : keys) {
+			if(obj.has(key)) {
+				JsonElement e = obj.get(key);
+				if(e != null) {
+					switch(jsonType) {
+						case Object:
+							if(e.isJsonObject()) {
+								result = (T) e.getAsJsonObject();
+								break lable;
+							}
+						case Array:
+							if(e.isJsonArray()) {
+								result = (T) e.getAsJsonArray();
+								break lable;
+							}
+						case Primitive:
+							if(e.isJsonPrimitive()) {
+								result = (T) e.getAsJsonPrimitive();
+								break lable;
+							}
+						case Element:
+								result = (T) e;
+								break lable;
+					}
+				}
+			}
+		}
+		return result;
+	}
+	
+	static enum JsonType {
+		Object, Array, Primitive, Element;
+		static <T extends JsonElement> JsonType getType(Class<T> type) {
+			if(type == JsonObject.class) {
+				return JsonType.Object;
+			}else if(type == JsonArray.class) {
+				return JsonType.Array;
+			}else if(type == JsonPrimitive.class) {
+				return JsonType.Primitive;
+			}
+			return JsonType.Element;
+		}
 	}
 	
 	public static long parseTick(long s, long tick) {
