@@ -1,8 +1,0 @@
-{
-    "dev_sound": {
-        "subtitle": "caption.dev.name",
-        "sounds": [
-            "caption:dev/dev"
-        ]
-    }
-}
