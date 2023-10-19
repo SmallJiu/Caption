@@ -77,6 +77,11 @@ public interface ITimer extends ISerializable {
 	@ZenMethod
 	ITimer copy();
 
+	@SuppressWarnings("unchecked")
+	default <T extends ITimer> T getAs(){
+		return (T) this;
+	}
+
 	@ZenMethod("allTicks")
 	default ITimer setAllTicks(long s, long tick) {
 		return this.setAllTicks(Timer.parseTick(s, tick));
@@ -158,8 +163,8 @@ public interface ITimer extends ISerializable {
 		StringJoiner sj = new StringJoiner(":");
 		
 		if(reverse) {
-			for (long l : str) {
-				sj.add(format(l, 10));
+			for(int i = 0; i < str.length; i++) {
+				sj.add(format(str[i], 10));
 			}
 		}else {
 			for(int i = str.length-1; i >= 0; i--) {
@@ -170,7 +175,7 @@ public interface ITimer extends ISerializable {
 	}
 	
 	@ZenMethod("msTimestamp")
-	static String formatTimestamp(long time) {
+	public static String formatTimestamp(long time) {
 		StringJoiner sj = new StringJoiner(":");
 		long t = time / 50;
 		long s = t / 20;
@@ -192,7 +197,7 @@ public interface ITimer extends ISerializable {
 	}
 	
 	@ZenMethod
-	static StringBuilder format(long num, long f) {
+	public static StringBuilder format(long num, long f) {
 		StringBuilder s = new StringBuilder();
 		if(num < 10)
 			s.append("0");
@@ -230,7 +235,7 @@ public interface ITimer extends ISerializable {
 	@ZenMethod("start")
 	default ITimer start() {
 		return this;
-	}
+	};
 
 	/**
 	 * like {@link net.minecraft.util.ITickable}
@@ -285,8 +290,8 @@ public interface ITimer extends ISerializable {
 	}
 
 	@ZenMethod
-	static ITimer from(NBTTagCompound nbt) {
-		ITimer time;
+	public static ITimer from(NBTTagCompound nbt) {
+		ITimer time = null;
 		if(nbt.hasKey("isSys") && nbt.getBoolean("isSys")) {
 			time = new MillisTimer();
 		}else {
@@ -297,8 +302,8 @@ public interface ITimer extends ISerializable {
 	}
 
 	@ZenMethod
-	static ITimer from(JsonObject obj) {
-		ITimer time;
+	public static ITimer from(JsonObject obj) {
+		ITimer time = null;
 		if(obj.has("isSys") && obj.get("isSys").getAsBoolean()) {
 			time = new MillisTimer();
 		}else {
@@ -312,7 +317,7 @@ public interface ITimer extends ISerializable {
 	 * var instance = core.Timer.from(true)
 	 */
 	@ZenMethod
-	static ITimer from(boolean isSysTimer) {
+	public static ITimer from(boolean isSysTimer) {
 		if(isSysTimer){
 			return new MillisTimer();
 		}else {
@@ -320,7 +325,7 @@ public interface ITimer extends ISerializable {
 		}
 	}
 	@ZenMethod
-	static ITimer from(boolean isSysTimer, long ms) {
+	public static ITimer from(boolean isSysTimer, long ms) {
 		if(isSysTimer){
 			return new MillisTimer(ms);
 		}else {
@@ -328,7 +333,7 @@ public interface ITimer extends ISerializable {
 		}
 	}
 	@ZenMethod
-	static ITimer from(boolean isSysTimer, long tick, long ms) {
+	public static ITimer from(boolean isSysTimer, long tick, long ms) {
 		if(isSysTimer){
 			return new MillisTimer((tick * 50) + ms);
 		}else {
@@ -336,7 +341,7 @@ public interface ITimer extends ISerializable {
 		}
 	}
 	@ZenMethod
-	static ITimer from(boolean isSysTimer, long sec, long tick, long ms) {
+	public static ITimer from(boolean isSysTimer, long sec, long tick, long ms) {
 		if(isSysTimer){
 			return new MillisTimer(sec, (tick * 50) + ms);
 		}else {
@@ -344,7 +349,7 @@ public interface ITimer extends ISerializable {
 		}
 	}
 	@ZenMethod
-	static ITimer from(boolean isSysTimer, long min, long sec, long tick, long ms) {
+	public static ITimer from(boolean isSysTimer, long min, long sec, long tick, long ms) {
 		if(isSysTimer){
 			return new MillisTimer(min, sec, (tick * 50) + ms);
 		}else {
@@ -352,7 +357,7 @@ public interface ITimer extends ISerializable {
 		}
 	}
 	@ZenMethod
-	static ITimer from(boolean isSysTimer, long hour, long min, long sec, long tick, long ms) {
+	public static ITimer from(boolean isSysTimer, long hour, long min, long sec, long tick, long ms) {
 		if(isSysTimer){
 			return new MillisTimer(hour, min, sec, (tick * 50) + ms);
 		}else {
@@ -360,7 +365,7 @@ public interface ITimer extends ISerializable {
 		}
 	}
 	@ZenMethod
-	static ITimer from(boolean isSysTimer, long day, long hour, long min, long sec, long tick, long ms) {
+	public static ITimer from(boolean isSysTimer, long day, long hour, long min, long sec, long tick, long ms) {
 		if(isSysTimer){
 			return new MillisTimer(day, hour, min, sec, (tick * 50) + ms);
 		}else {
