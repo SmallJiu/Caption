@@ -424,6 +424,8 @@ public class Caption {
 	public DisplaySideType getDisplaySide() {return side;}
 	public IImage getDisplayImg() {return img;}
 	public ISound getSound() {return sound;}
+	public DisplayStyle getStyle() {return style;}
+	public boolean getNeedBackground() {return needBg;}
 	
 	public Caption setDisplayName(IText displayName) {this.displayName = displayName; return this;}
 	public Caption setDisplayText(IText displayText) {this.displayText = displayText; return this;}
