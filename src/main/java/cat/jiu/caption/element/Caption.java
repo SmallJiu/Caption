@@ -425,7 +425,10 @@ public class Caption implements ICaption {
 	public IImage getDisplayImg() {return img;}
 	public ISound getSound() {return sound;}
 	public boolean isNeedBackground() {return needBg;}
-	
+	public DisplayStyle getStyle() {
+		return style;
+	}
+
 	public Caption setDisplayName(IText displayName) {this.displayName = displayName; return this;}
 	public Caption setDisplayText(IText displayText) {this.displayText = displayText; return this;}
 	public Caption setDisplayImg(IImage displayImg) {this.img = displayImg; return this;}
